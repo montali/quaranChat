@@ -1,3 +1,5 @@
+# 🏠🏠quaranChat🏠🏠
+### Chat with friends when staying at ~.
 This project is currently being developed for the **Tecnologie Internet** course [@Università di Parma](https://www.unipr.it). We're currently using **PeerJS** and **React** to build a P2P chat app based on WebRTC. The project is still in the first development phases, so good luck reading that.
 
 ## Course notes
