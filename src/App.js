@@ -232,7 +232,7 @@ class MainApp extends React.Component {
     peer.on("open", id => {
       // Connect to our login server and update the ID with a POST
       axios
-        .post("http://localhost:3000/id/" + username, {
+        .post("http://40ena.monta.li:40015/id/" + username, {
           password: password,
           connectionID: id,
           crossDomain: true
@@ -261,7 +261,7 @@ class MainApp extends React.Component {
     const password = this.state.password;
     const setState = this.setState.bind(this);
     axios
-      .delete("http://localhost:3000/id/" + username, {
+      .delete("http://40ena.monta.li:40015/id/" + username, {
         data: {
           password: password,
           crossDomain: true
