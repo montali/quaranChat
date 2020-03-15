@@ -1,7 +1,5 @@
 import React from "react";
-import logo from "./logo.svg";
 import "./App.css";
-import PropTypes from "prop-types";
 // React Chat Elements
 import "react-chat-elements/dist/main.css";
 import { MessageBox } from "react-chat-elements";
@@ -25,24 +23,19 @@ import Typography from "@material-ui/core/Typography";
 import TextField from "@material-ui/core/TextField";
 import Grid from "@material-ui/core/Grid";
 import Avatar from "@material-ui/core/Avatar";
-import Paper from "@material-ui/core/Paper";
 import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
 import Button from "@material-ui/core/Button";
-import Snackbar from "@material-ui/core/Snackbar";
-import { sizing } from "@material-ui/system";
 import { makeStyles, useTheme } from "@material-ui/core/styles";
 import Dialog from "@material-ui/core/Dialog";
 import DialogActions from "@material-ui/core/DialogActions";
 import DialogContent from "@material-ui/core/DialogContent";
 import DialogContentText from "@material-ui/core/DialogContentText";
 import DialogTitle from "@material-ui/core/DialogTitle";
-import { Face, Fingerprint } from "@material-ui/icons";
-import FormControlLabel from "@material-ui/core/FormControlLabel";
-import Checkbox from "@material-ui/core/Checkbox";
-import Peer from "peerjs";
 
-// TODO REFACTOR THIS SHIT PLS
+// Local components
+import SignInPage from "./components/SignInPage";
+import Peer from "peerjs";
 
 const drawerWidth = 240;
 
@@ -91,9 +84,6 @@ const useStyles = makeStyles(theme => ({
 }));
 
 class MainView extends React.Component {
-  constructor(props) {
-    super(props);
-  }
   render() {
     const { container } = this.props;
     let newChatDialogOpen = false;
@@ -208,6 +198,7 @@ class MainApp extends React.Component {
     this.handleLoginRequest = this.handleLoginRequest.bind(this);
     this.handleSnackbarClose = this.handleSnackbarClose.bind(this);
     this.handleLogout = this.handleLogout.bind(this);
+    this.handleSignUpRequest = this.handleSignUpRequest.bind(this);
   }
 
   handleLoginChange(event) {
@@ -221,7 +212,8 @@ class MainApp extends React.Component {
     this.setState({ loginSnackbar: false });
   }
 
-  handleLoginRequest() {
+  handleLoginRequest(event) {
+    event.preventDefault();
     const axios = require("axios");
     // Request an ID to the PeerJS server
     const peer = new Peer();
@@ -252,6 +244,31 @@ class MainApp extends React.Component {
           console.log(this.state);
         });
     });
+  }
+  handleSignUpRequest() {
+    const axios = require("axios");
+    const username = this.state.username;
+    const password = this.state.password;
+    const setState = this.setState.bind(this);
+    // Connect to our login server and register the user
+    axios
+      .post("http://40ena.monta.li:40015/signup/", {
+        username: username,
+        password: password,
+        crossDomain: true
+      })
+      .then(res => {
+        setState({
+          loginSnackbar: true,
+          snackbarMessage: "Succesfully registered! You can now login."
+        });
+      })
+      .catch(error => {
+        setState({
+          loginSnackbar: true,
+          snackbarMessage: "Already existing username!"
+        });
+      });
   }
 
   handleLogout() {
@@ -284,14 +301,15 @@ class MainApp extends React.Component {
   render() {
     if (!this.state.loggedIn) {
       return (
-        <LoginTab
+        <SignInPage
           classes={this.props.classes}
           handleFormChange={this.handleLoginChange}
           handleLogin={this.handleLoginRequest}
           loginSnackbar={this.state.loginSnackbar}
           handleSnackbarClose={this.handleSnackbarClose}
           snackbarMessage={this.state.snackbarMessage}
-        ></LoginTab>
+          handleSignUp={this.handleSignUpRequest}
+        ></SignInPage>
       );
     } else {
       return (
@@ -320,10 +338,6 @@ function App(props) {
 }
 
 class Chat extends React.Component {
-  constructor(props) {
-    super(props);
-  }
-
   render() {
     return (
       <main height="100vh" className={this.props.classes.content}>
@@ -364,10 +378,6 @@ class Chat extends React.Component {
 }
 
 class MessageInput extends React.Component {
-  constructor(props) {
-    super(props);
-  }
-
   render() {
     return (
       <Grid item xs={12}>
@@ -399,10 +409,6 @@ class MessageInput extends React.Component {
 }
 
 class MessageRow extends React.Component {
-  constructor(props) {
-    super(props);
-  }
-
   render() {
     let direction;
     if (this.props.isReceived) {
@@ -484,10 +490,6 @@ function FormDialog() {
 }
 
 class NewChatDialog extends React.Component {
-  constructor(props) {
-    super(props);
-  }
-
   render() {
     return (
       <Dialog
@@ -519,108 +521,6 @@ class NewChatDialog extends React.Component {
           </Button>
         </DialogActions>
       </Dialog>
-    );
-  }
-}
-
-class LoginTab extends React.Component {
-  render() {
-    const { classes } = this.props;
-    return (
-      <div
-        style={{
-          height: "100vh",
-          width: "100vw",
-          background: "#0E4D81"
-        }}
-      >
-        <Snackbar
-          anchorOrigin={{
-            vertical: "bottom",
-            horizontal: "center"
-          }}
-          open={this.props.loginSnackbar}
-          autoHideDuration={4000}
-          onClose={this.props.handleSnackbarClose}
-          message={this.props.snackbarMessage}
-        />
-        <div
-          style={{
-            position: "absolute",
-            left: "50%",
-            top: "50%",
-            transform: "translate(-50%, -50%)"
-          }}
-        >
-          <Paper className={classes.padding}>
-            <div className={classes.margin}>
-              <h2>Welcome to quaranChat.</h2>
-              <Grid container spacing={8} alignItems="flex-end">
-                <Grid item>
-                  <Face />
-                </Grid>
-                <Grid item md={true} sm={true} xs={true}>
-                  <TextField
-                    id="username"
-                    name="username"
-                    label="Username"
-                    type="email"
-                    fullWidth
-                    autoFocus
-                    required
-                    onChange={this.props.handleFormChange}
-                  />
-                </Grid>
-              </Grid>
-              <Grid container spacing={8} alignItems="flex-end">
-                <Grid item>
-                  <Fingerprint />
-                </Grid>
-                <Grid item md={true} sm={true} xs={true}>
-                  <TextField
-                    name="password"
-                    id="password"
-                    label="Password"
-                    type="password"
-                    fullWidth
-                    required
-                    onChange={this.props.handleFormChange}
-                  />
-                </Grid>
-              </Grid>
-              <Grid container alignItems="center" justify="space-between">
-                <Grid item>
-                  <FormControlLabel
-                    control={<Checkbox color="primary" />}
-                    label="Remember me"
-                  />
-                </Grid>
-                <Grid item>
-                  <Button
-                    disableFocusRipple
-                    disableRipple
-                    style={{ textTransform: "none" }}
-                    variant="text"
-                    color="primary"
-                  >
-                    Forgot password?
-                  </Button>
-                </Grid>
-              </Grid>
-              <Grid container justify="center" style={{ marginTop: "10px" }}>
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  style={{ textTransform: "none" }}
-                  onClick={this.props.handleLogin}
-                >
-                  Login
-                </Button>
-              </Grid>
-            </div>
-          </Paper>
-        </div>
-      </div>
     );
   }
 }

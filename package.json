@@ -11,6 +11,7 @@
     "axios": "^0.19.2",
     "peerjs": "^1.2.0",
     "react": "^16.13.0",
+    "react-card-flip": "^1.0.10",
     "react-chat-elements": "^10.8.0",
     "react-dom": "^16.13.0",
     "react-scripts": "3.4.0"
