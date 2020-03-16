@@ -139,8 +139,36 @@ const useStyles = makeStyles(theme => ({
 }));
 
 class MainView extends React.Component {
+  constructor(props) {
+    super(props);
+    this.chats = {};
+    this.state = { openChatID: null };
+  }
+  handleDataReceived(data, connection) {
+    this.chats[connection.peer].messages.push(data);
+  }
+
+  handleSendMessage(message, recipientID) {
+    this.chats[recipientID].connection.send(message);
+    this.chats[recipientID].messages.push(message);
+  }
+
+  handleNewConnection(connection) {
+    this.chats[connection.peer] = { connection: connection, messages: [] };
+    connection.on("open", () => {
+      connection.on("data", data => {
+        this.handleDataReceived(data, connection);
+      });
+    });
+    // TODO: add the chat to our menu
+  }
+
+  componentDidMount() {
+    this.props.peer.on("connection", this.handleNewConnection);
+  }
   render() {
     const { container } = this.props;
+    const openChatID = this.state.openChatID;
     let newChatDialogOpen = false;
 
     const handleDrawerToggle = () => {
@@ -178,53 +206,42 @@ class MainView extends React.Component {
             </Typography>
           </Toolbar>
         </AppBar>
-        <Drawer
-          variant="permanent"
-          className={clsx(this.props.classes.drawer, {
-            [this.props.classes.drawerOpen]: this.props.mobileOpen,
-            [this.props.classes.drawerClose]: !this.props.mobileOpen
-          })}
-          classes={{
-            paper: clsx({
-              [this.props.classes.drawerOpen]: this.props.mobileOpen,
-              [this.props.classes.drawerClose]: !this.props.mobileOpen
-            })
-          }}
-        >
-          <div className={this.props.classes.toolbar}>
-            <IconButton onClick={handleDrawerToggle}>
-              {this.props.theme.direction === "rtl" ? (
-                <ChevronRightIcon />
-              ) : (
-                <ChevronLeftIcon />
-              )}
-            </IconButton>
-          </div>
-          <Divider />
-          <List>
-            {["Chats", "Friends"].map((text, index) => (
-              <ListItem button key={text}>
-                <ListItemIcon>
-                  {index % 2 === 0 ? <ChatIcon /> : <PeopleIcon />}
-                </ListItemIcon>
-                <ListItemText primary={text} />
-              </ListItem>
-            ))}
-          </List>
-          <Divider />
-          <List>
-            {["Settings", "Logout"].map((text, index) => (
-              <ListItem button key={text}>
-                <ListItemIcon>
-                  {index % 2 === 0 ? <SettingsIcon /> : <ExitToAppIcon />}
-                </ListItemIcon>
-                <ListItemText primary={text} />
-              </ListItem>
-            ))}
-          </List>
-        </Drawer>
-        <Chat classes={this.props.classes} />
-        <AccountList classes={this.props.classes} />
+        <nav className={this.props.classes.drawer} aria-label="mailbox folders">
+          {/* The implementation can be swapped with js to avoid SEO duplication of links. */}
+          <Hidden smUp implementation="css">
+            <Drawer
+              container={container}
+              variant="temporary"
+              anchor={this.props.theme.direction === "rtl" ? "right" : "left"}
+              open={this.props.mobileOpen}
+              onClose={handleDrawerToggle}
+              classes={{
+                paper: this.props.classes.drawerPaper
+              }}
+              ModalProps={{
+                keepMounted: true // Better open performance on mobile.
+              }}
+            >
+              {drawer}
+            </Drawer>
+          </Hidden>
+          <Hidden xsDown implementation="css">
+            <Drawer
+              classes={{
+                paper: this.props.classes.drawerPaper
+              }}
+              variant="permanent"
+              open
+            >
+              {drawer}
+            </Drawer>
+          </Hidden>
+        </nav>
+        <Chat
+          classes={this.props.classes}
+          chatData={this.chats[openChatID]}
+          onSendHandler={this.handleSendMessage}
+        />
         <NewChatDialog open={newChatDialogOpen} handleClose={handleNewChat} />
       </div>
     );
@@ -360,6 +377,7 @@ class MainApp extends React.Component {
           handleLogout={this.handleLogout}
           mobileOpen={this.props.mobileOpen}
           setMobileOpen={this.props.setMobileOpen}
+          peer={this.state.peer}
         />
       );
     }
@@ -381,7 +399,28 @@ function App(props) {
 }
 
 class Chat extends React.Component {
+  constructor(props) {
+    super(props);
+    this.textChangeHandler = this.textChangeHandler.bind(this);
+    this.sendHandler = this.sendHandler.bind(this);
+  }
+
+  sendHandler() {
+    this.props.onSendHandler(
+      this.state.inputText,
+      this.props.chatData.connection.peer
+    );
+    console.log("ueue");
+  }
+
+  textChangeHandler(event) {
+    this.setState({ inputText: event.target.value });
+  }
+
   render() {
+    const messageRows = this.props.chatData.messages.map(message => (
+      <MessageRow senderName={message.sender} message={message.text} />
+    ));
     return (
       <main height="100vh" className={this.props.classes.content}>
         <div />
@@ -463,10 +502,15 @@ class MessageInput extends React.Component {
               multiline
               fullWidth
               variant="outlined"
+              onChange={this.props.onTextChange}
             />
           </Grid>
           <Grid item xs={1}>
-            <IconButton color="primary" aria-label="add to shopping cart">
+            <IconButton
+              color="primary"
+              aria-label="add to shopping cart"
+              onClick={this.props.onSend}
+            >
               <SendIcon />
             </IconButton>
           </Grid>
