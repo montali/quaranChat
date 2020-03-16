@@ -11,6 +11,7 @@ import Divider from "@material-ui/core/Divider";
 import Drawer from "@material-ui/core/Drawer";
 import IconButton from "@material-ui/core/IconButton";
 import List from "@material-ui/core/List";
+import Hidden from "@material-ui/core/Hidden";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemIcon from "@material-ui/core/ListItemIcon";
 import ListItemText from "@material-ui/core/ListItemText";
@@ -38,6 +39,7 @@ import PeopleIcon from "@material-ui/icons/People";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
 import ChevronRightIcon from "@material-ui/icons/ChevronRight";
 import clsx from "clsx";
+import axios from "axios";
 
 // Local components
 import SignInPage from "./components/SignInPage";
@@ -141,20 +143,83 @@ const useStyles = makeStyles(theme => ({
 class MainView extends React.Component {
   constructor(props) {
     super(props);
-    this.chats = {};
-    this.state = { openChatID: null };
-  }
-  handleDataReceived(data, connection) {
-    this.chats[connection.peer].messages.push(data);
+    this.state = {
+      chats: {
+        "1234": {
+          username: "marcolone",
+          messages: [
+            {
+              position: "right",
+              type: "text",
+              text: "Ciao bello come va?",
+              date: new Date()
+            },
+            {
+              position: "left",
+              type: "text",
+              text: "Si tutto bene, te come va la quarantena?",
+              date: new Date()
+            },
+            {
+              position: "right",
+              type: "text",
+              text: "Potrebbe andar meglio, sto cazz di virus",
+              date: new Date()
+            },
+            {
+              position: "left",
+              type: "text",
+              text: "Eh gia, bella merda",
+              date: new Date()
+            }
+          ]
+        }
+      },
+      openChatID: "1234",
+      newChatDialogOpen: false
+    };
+    this.handleNewChat = this.handleNewChat.bind(this);
+    this.handleChange = this.handleChange.bind(this);
+    this.handleNewConnection = this.handleNewConnection.bind(this);
+    this.handleSendMessage = this.handleSendMessage.bind(this);
+    this.handleChatChange = this.handleChatChange.bind(this);
   }
 
-  handleSendMessage(message, recipientID) {
-    this.chats[recipientID].connection.send(message);
-    this.chats[recipientID].messages.push(message);
+  handleChatChange(chat) {
+    console.log(chat);
+    console.log(this.state);
+    this.setState({ openChatID: chat.peerID });
+  }
+
+  handleDataReceived(message, connection) {
+    message.position = "left";
+    console.log(message);
+    this.state.chats[connection.peer].messages.push(message);
+    this.forceUpdate();
+  }
+
+  handleSendMessage(text, recipientID) {
+    let message = {
+      type: "text",
+      text: text,
+      date: new Date()
+    };
+    this.state.chats[recipientID].connection.send(message);
+    message.position = "right";
+    this.state.chats[recipientID].messages.push(message);
+    this.forceUpdate();
   }
 
   handleNewConnection(connection) {
-    this.chats[connection.peer] = { connection: connection, messages: [] };
+    // TODO: Get username by ID from server
+    var username = "mario";
+    var chats = this.state.chats;
+    chats[connection.peer] = {
+      connection: connection,
+      messages: [],
+      username: username
+    };
+    this.setState({ chats: chats });
     connection.on("open", () => {
       connection.on("data", data => {
         this.handleDataReceived(data, connection);
@@ -163,21 +228,59 @@ class MainView extends React.Component {
     // TODO: add the chat to our menu
   }
 
+  // Funzione per generare lista messaggi come vuole la libreria prendendo in input lo state?
+
   componentDidMount() {
     this.props.peer.on("connection", this.handleNewConnection);
   }
+
+  handleChange(event) {
+    this.setState({ query: event.target.value });
+  }
+
+  handleNewChat(target) {
+    console.log(this.state.query);
+
+    // Request the ID to the server
+    axios
+      .get("http://40ena.monta.li:40015/id/" + this.state.query, {
+        crossDomain: true
+      })
+      .then(res => {
+        // Connect our peer to the id and save the connection in chats
+        var connection = this.props.peer.connect(res.data);
+        var chats = this.state.chats;
+        chats[res.data] = {
+          connection: connection,
+          username: this.state.query,
+          messages: []
+        };
+        connection.on("open", () => {
+          connection.on("data", data => {
+            this.handleDataReceived(data, connection);
+          });
+        });
+        this.setState({ chats: chats });
+        // Set openChatID to the new one
+        this.setState({ newChatDialogOpen: false, openChatID: res.data });
+      })
+      .catch(error => {
+        // Snackbar to report error
+        /*setState({
+          loginSnackbar: true,
+          snackbarMessage: "Wrong login inserted!"
+        });*/
+        console.log(error);
+      });
+  }
+
   render() {
     const { container } = this.props;
-    const openChatID = this.state.openChatID;
-    let newChatDialogOpen = false;
+    console.log(this.state);
+    const chatData = this.state.chats[this.state.openChatID];
 
     const handleDrawerToggle = () => {
       this.props.setMobileOpen(!this.props.mobileOpen);
-    };
-
-    const handleNewChat = () => {
-      newChatDialogOpen = newChatDialogOpen ? false : true;
-      console.log("ok");
     };
 
     return (
@@ -206,43 +309,70 @@ class MainView extends React.Component {
             </Typography>
           </Toolbar>
         </AppBar>
-        <nav className={this.props.classes.drawer} aria-label="mailbox folders">
-          {/* The implementation can be swapped with js to avoid SEO duplication of links. */}
-          <Hidden smUp implementation="css">
-            <Drawer
-              container={container}
-              variant="temporary"
-              anchor={this.props.theme.direction === "rtl" ? "right" : "left"}
-              open={this.props.mobileOpen}
-              onClose={handleDrawerToggle}
-              classes={{
-                paper: this.props.classes.drawerPaper
-              }}
-              ModalProps={{
-                keepMounted: true // Better open performance on mobile.
-              }}
-            >
-              {drawer}
-            </Drawer>
-          </Hidden>
-          <Hidden xsDown implementation="css">
-            <Drawer
-              classes={{
-                paper: this.props.classes.drawerPaper
-              }}
-              variant="permanent"
-              open
-            >
-              {drawer}
-            </Drawer>
-          </Hidden>
-        </nav>
+        <Drawer
+          variant="permanent"
+          className={clsx(this.props.classes.drawer, {
+            [this.props.classes.drawerOpen]: this.props.mobileOpen,
+            [this.props.classes.drawerClose]: !this.props.mobileOpen
+          })}
+          classes={{
+            paper: clsx({
+              [this.props.classes.drawerOpen]: this.props.mobileOpen,
+              [this.props.classes.drawerClose]: !this.props.mobileOpen
+            })
+          }}
+        >
+          <div className={this.props.classes.toolbar}>
+            <IconButton onClick={handleDrawerToggle}>
+              {this.props.theme.direction === "rtl" ? (
+                <ChevronRightIcon />
+              ) : (
+                <ChevronLeftIcon />
+              )}
+            </IconButton>
+          </div>
+          <Divider />
+          <List>
+            {["Search user", "Friends"].map((text, index) => (
+              <ListItem
+                button
+                key={text}
+                onClick={() => this.setState({ newChatDialogOpen: true })}
+              >
+                <ListItemIcon>
+                  {index % 2 === 0 ? <ChatIcon /> : <PeopleIcon />}
+                </ListItemIcon>
+                <ListItemText primary={text} />
+              </ListItem>
+            ))}
+          </List>
+          <Divider />
+          <List>
+            {["Settings", "Logout"].map((text, index) => (
+              <ListItem button key={text}>
+                <ListItemIcon>
+                  {index % 2 === 0 ? <SettingsIcon /> : <ExitToAppIcon />}
+                </ListItemIcon>
+                <ListItemText primary={text} />
+              </ListItem>
+            ))}
+          </List>
+        </Drawer>
         <Chat
           classes={this.props.classes}
-          chatData={this.chats[openChatID]}
+          chatData={chatData}
           onSendHandler={this.handleSendMessage}
         />
-        <NewChatDialog open={newChatDialogOpen} handleClose={handleNewChat} />
+        <AccountList
+          classes={this.props.classes}
+          chats={this.state.chats}
+          onClick={this.handleChatChange}
+        />
+        <NewChatDialog
+          open={this.state.newChatDialogOpen}
+          handleClose={this.handleNewChat}
+          handleChange={this.handleChange}
+        />
       </div>
     );
   }
@@ -272,7 +402,6 @@ class MainApp extends React.Component {
 
   handleLoginRequest(event) {
     event.preventDefault();
-    const axios = require("axios");
     // Request an ID to the PeerJS server
     const peer = new Peer();
     this.setState({ peer: peer });
@@ -304,7 +433,6 @@ class MainApp extends React.Component {
     });
   }
   handleSignUpRequest() {
-    const axios = require("axios");
     const username = this.state.username;
     const password = this.state.password;
     const setState = this.setState.bind(this);
@@ -330,7 +458,6 @@ class MainApp extends React.Component {
   }
 
   handleLogout() {
-    const axios = require("axios");
     this.state.peer.destroy();
     const username = this.state.username;
     const password = this.state.password;
@@ -403,6 +530,7 @@ class Chat extends React.Component {
     super(props);
     this.textChangeHandler = this.textChangeHandler.bind(this);
     this.sendHandler = this.sendHandler.bind(this);
+    this.state = { inputText: "" };
   }
 
   sendHandler() {
@@ -410,7 +538,7 @@ class Chat extends React.Component {
       this.state.inputText,
       this.props.chatData.connection.peer
     );
-    console.log("ueue");
+    this.setState({ inputText: "" });
   }
 
   textChangeHandler(event) {
@@ -418,22 +546,22 @@ class Chat extends React.Component {
   }
 
   render() {
-    const messageRows = this.props.chatData.messages.map(message => (
+    /*const messageRows = this.props.chatData.messages.map(message => (
       <MessageRow senderName={message.sender} message={message.text} />
-    ));
+    ));*/
     return (
       <main height="100vh" className={this.props.classes.content}>
         <div />
         <Grid container direction="row" alignItems="stretch">
           <Grid item className={this.props.classes.component_with_margin}>
-            <Avatar>S</Avatar>
+            <Avatar>{this.props.chatData.username.charAt(0)}</Avatar>
           </Grid>
           <Grid item>
             <Typography
               variant="h5"
               className={this.props.classes.component_with_margin}
             >
-              Simone
+              {this.props.chatData.username}
             </Typography>
           </Grid>
         </Grid>
@@ -444,38 +572,18 @@ class Chat extends React.Component {
             className={this.props.classes.message}
             lockable={true}
             toBottomHeight={"100%"}
-            dataSource={[
-              {
-                position: "right",
-                type: "text",
-                text: "Ciao bello come va?",
-                date: new Date()
-              },
-              {
-                position: "left",
-                type: "text",
-                text: "Si tutto bene, te come va la quarantena?",
-                date: new Date()
-              },
-              {
-                position: "right",
-                type: "text",
-                text: "Potrebbe andar meglio, sto cazz di virus",
-                date: new Date()
-              },
-              {
-                position: "left",
-                type: "text",
-                text: "Eh gia, bella merda",
-                date: new Date()
-              }
-            ]}
+            dataSource={this.props.chatData.messages}
           />
         </GridList>
         <Grid container direction="column" alignItems="stretch">
           <Grid item className={this.props.classes.component_with_margin}>
             <Grid container direction="row" alignItems="stretch">
-              <MessageInput classes={this.props.classes} />
+              <MessageInput
+                classes={this.props.classes}
+                onSend={this.sendHandler}
+                onTextChange={this.textChangeHandler}
+                inputText={this.state.inputText}
+              />
             </Grid>
           </Grid>
         </Grid>
@@ -502,7 +610,14 @@ class MessageInput extends React.Component {
               multiline
               fullWidth
               variant="outlined"
+              value={this.props.inputText}
               onChange={this.props.onTextChange}
+              onKeyPress={ev => {
+                if (ev.key === "Enter") {
+                  ev.preventDefault();
+                  this.props.onSend();
+                }
+              }}
             />
           </Grid>
           <Grid item xs={1}>
@@ -522,6 +637,31 @@ class MessageInput extends React.Component {
 
 class AccountList extends React.Component {
   render() {
+    var chatDataSource = [];
+    for (var chat in this.props.chats) {
+      console.log(this.props.chats);
+      console.log(chat);
+      const messageLength = this.props.chats[chat].messages.length;
+      const date =
+        messageLength > 0
+          ? this.props.chats[chat].messages[messageLength - 1].date
+          : new Date();
+      const subtitle =
+        messageLength > 0
+          ? this.props.chats[chat].messages[messageLength - 1].text
+          : "";
+      if (this.props.chats.hasOwnProperty(chat)) {
+        chatDataSource.push({
+          avatar: "https://facebook.github.io/react/img/logo.svg",
+          peerID: chat,
+          alt: "Reactjs",
+          title: this.props.chats[chat].username,
+          subtitle: subtitle,
+          date: date,
+          unread: 0
+        });
+      }
+    }
     return (
       <Drawer
         className={this.props.classes.rightDrawer}
@@ -531,32 +671,8 @@ class AccountList extends React.Component {
         <div className={this.props.classes.toolbar} />
         <ChatList
           className="chat-list"
-          dataSource={[
-            {
-              avatar: "https://facebook.github.io/react/img/logo.svg",
-              alt: "Reactjs",
-              title: "Marco",
-              subtitle: "What are you doing?",
-              date: new Date(),
-              unread: 0
-            },
-            {
-              avatar: "https://facebook.github.io/react/img/logo.svg",
-              alt: "Reactjs",
-              title: "Giovanni",
-              subtitle: "What are you doing?",
-              date: new Date(),
-              unread: 0
-            },
-            {
-              avatar: "https://facebook.github.io/react/img/logo.svg",
-              alt: "Reactjs",
-              title: "Paolo",
-              subtitle: "What are you doing?",
-              date: new Date(),
-              unread: 0
-            }
-          ]}
+          dataSource={chatDataSource}
+          onClick={this.props.onClick}
         />
       </Drawer>
     );
@@ -595,54 +711,6 @@ class MessageRow extends React.Component {
     );
   }
 }
-function FormDialog() {
-  const [open, setOpen] = React.useState(false);
-
-  const handleClickOpen = () => {
-    setOpen(true);
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-  };
-
-  return (
-    <div>
-      <Button variant="outlined" color="primary" onClick={handleClickOpen}>
-        Open form dialog
-      </Button>
-      <Dialog
-        open={open}
-        onClose={handleClose}
-        aria-labelledby="form-dialog-title"
-      >
-        <DialogTitle id="form-dialog-title">Subscribe</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            To subscribe to this website, please enter your email address here.
-            We will send updates occasionally.
-          </DialogContentText>
-          <TextField
-            autoFocus
-            margin="dense"
-            id="name"
-            label="Email Address"
-            type="email"
-            fullWidth
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose} color="primary">
-            Cancel
-          </Button>
-          <Button onClick={handleClose} color="primary">
-            Subscribe
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </div>
-  );
-}
 
 class NewChatDialog extends React.Component {
   render() {
@@ -652,18 +720,18 @@ class NewChatDialog extends React.Component {
         onClose={this.props.handleClose}
         aria-labelledby="form-dialog-title"
       >
-        <DialogTitle id="form-dialog-title">Subscribe</DialogTitle>
+        <DialogTitle id="form-dialog-title">New message</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            To subscribe to this website, please enter your email address here.
-            We will send updates occasionally.
+            Please, insert your recipient username.
           </DialogContentText>
           <TextField
             autoFocus
             margin="dense"
-            id="name"
-            label="Email Address"
-            type="email"
+            id="username"
+            label="Username"
+            type="text"
+            onChange={this.props.handleChange}
             fullWidth
           />
         </DialogContent>
@@ -672,7 +740,7 @@ class NewChatDialog extends React.Component {
             Cancel
           </Button>
           <Button onClick={this.props.handleClose} color="primary">
-            Subscribe
+            Search
           </Button>
         </DialogActions>
       </Dialog>
