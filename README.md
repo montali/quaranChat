@@ -2,6 +2,9 @@
 ### Chat with friends when staying at ~.
 This project is currently being developed for the **Tecnologie Internet** course [@Università di Parma](https://www.unipr.it). We're using **PeerJS** and **React** to build a P2P chat app based on WebRTC. The project is still in the first development phases, so good luck reading that.
 
+## Username server
+We built a login server using Node.js and Express which tracks associations between peer.js IDs and our usernames. You can find it [here](https://github.com/simmontali/usernameServer). 
+
 ## Course notes
 
 You can find the course notes [here.](https://github.com/simmontali/internetnotes)
