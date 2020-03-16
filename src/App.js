@@ -84,8 +84,36 @@ const useStyles = makeStyles(theme => ({
 }));
 
 class MainView extends React.Component {
+  constructor(props) {
+    super(props);
+    this.chats = {};
+    this.state = { openChatID: null };
+  }
+  handleDataReceived(data, connection) {
+    this.chats[connection.peer].messages.push(data);
+  }
+
+  handleSendMessage(message, recipientID) {
+    this.chats[recipientID].connection.send(message);
+    this.chats[recipientID].messages.push(message);
+  }
+
+  handleNewConnection(connection) {
+    this.chats[connection.peer] = { connection: connection, messages: [] };
+    connection.on("open", () => {
+      connection.on("data", data => {
+        this.handleDataReceived(data, connection);
+      });
+    });
+    // TODO: add the chat to our menu
+  }
+
+  componentDidMount() {
+    this.props.peer.on("connection", this.handleNewConnection);
+  }
   render() {
     const { container } = this.props;
+    const openChatID = this.state.openChatID;
     let newChatDialogOpen = false;
 
     const handleDrawerToggle = () => {
@@ -183,7 +211,11 @@ class MainView extends React.Component {
             </Drawer>
           </Hidden>
         </nav>
-        <Chat classes={this.props.classes} />
+        <Chat
+          classes={this.props.classes}
+          chatData={this.chats[openChatID]}
+          onSendHandler={this.handleSendMessage}
+        />
         <NewChatDialog open={newChatDialogOpen} handleClose={handleNewChat} />
       </div>
     );
@@ -317,6 +349,7 @@ class MainApp extends React.Component {
           classes={this.props.classes}
           theme={this.props.theme}
           handleLogout={this.handleLogout}
+          peer={this.state.peer}
         />
       );
     }
@@ -338,7 +371,28 @@ function App(props) {
 }
 
 class Chat extends React.Component {
+  constructor(props) {
+    super(props);
+    this.textChangeHandler = this.textChangeHandler.bind(this);
+    this.sendHandler = this.sendHandler.bind(this);
+  }
+
+  sendHandler() {
+    this.props.onSendHandler(
+      this.state.inputText,
+      this.props.chatData.connection.peer
+    );
+    console.log("ueue");
+  }
+
+  textChangeHandler(event) {
+    this.setState({ inputText: event.target.value });
+  }
+
   render() {
+    const messageRows = this.props.chatData.messages.map(message => (
+      <MessageRow senderName={message.sender} message={message.text} />
+    ));
     return (
       <main height="100vh" className={this.props.classes.content}>
         <div className={this.props.classes.toolbar} />
@@ -370,7 +424,12 @@ class Chat extends React.Component {
             senderName="Simone"
             message="Ma si dai, tutto bene. Tu?"
           />
-          <MessageInput classes={this.props.classes} />
+          {messageRows}
+          <MessageInput
+            classes={this.props.classes}
+            onTextChange={this.textChangeHandler}
+            onSend={this.sendHandler}
+          />
         </Grid>
       </main>
     );
@@ -395,10 +454,15 @@ class MessageInput extends React.Component {
               multiline
               fullWidth
               variant="outlined"
+              onChange={this.props.onTextChange}
             />
           </Grid>
           <Grid item xs={1}>
-            <IconButton color="primary" aria-label="add to shopping cart">
+            <IconButton
+              color="primary"
+              aria-label="add to shopping cart"
+              onClick={this.props.onSend}
+            >
               <SendIcon />
             </IconButton>
           </Grid>
