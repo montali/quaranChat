@@ -2,20 +2,18 @@ import React from "react";
 import "./App.css";
 // React Chat Elements
 import "react-chat-elements/dist/main.css";
-import { MessageBox } from "react-chat-elements";
+import { ChatList } from "react-chat-elements";
+import { MessageList } from "react-chat-elements";
 // Material UI
 import AppBar from "@material-ui/core/AppBar";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import Divider from "@material-ui/core/Divider";
 import Drawer from "@material-ui/core/Drawer";
-import Hidden from "@material-ui/core/Hidden";
 import IconButton from "@material-ui/core/IconButton";
-import InboxIcon from "@material-ui/icons/MoveToInbox";
 import List from "@material-ui/core/List";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemIcon from "@material-ui/core/ListItemIcon";
 import ListItemText from "@material-ui/core/ListItemText";
-import MailIcon from "@material-ui/icons/Mail";
 import MenuIcon from "@material-ui/icons/Menu";
 import SendIcon from "@material-ui/icons/Send";
 import Toolbar from "@material-ui/core/Toolbar";
@@ -32,6 +30,14 @@ import DialogActions from "@material-ui/core/DialogActions";
 import DialogContent from "@material-ui/core/DialogContent";
 import DialogContentText from "@material-ui/core/DialogContentText";
 import DialogTitle from "@material-ui/core/DialogTitle";
+import GridList from "@material-ui/core/GridList";
+import ChatIcon from "@material-ui/icons/Chat";
+import SettingsIcon from "@material-ui/icons/Settings";
+import ExitToAppIcon from "@material-ui/icons/ExitToApp";
+import PeopleIcon from "@material-ui/icons/People";
+import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
+import ChevronRightIcon from "@material-ui/icons/ChevronRight";
+import clsx from "clsx";
 
 // Local components
 import SignInPage from "./components/SignInPage";
@@ -45,32 +51,63 @@ const useStyles = makeStyles(theme => ({
     alignItems: "flex-end",
     height: "100vh"
   },
-  drawer: {
-    [theme.breakpoints.up("sm")]: {
-      width: drawerWidth,
-      flexShrink: 0
-    }
-  },
   appBar: {
-    [theme.breakpoints.up("sm")]: {
-      width: `calc(100% - ${drawerWidth}px)`,
-      marginLeft: drawerWidth
-    }
+    zIndex: theme.zIndex.drawer + 1,
+    transition: theme.transitions.create(["width", "margin"], {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.leavingScreen
+    })
+  },
+  appBarShift: {
+    marginLeft: drawerWidth,
+    width: `calc(100% - ${drawerWidth}px)`,
+    transition: theme.transitions.create(["width", "margin"], {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.enteringScreen
+    })
   },
   menuButton: {
-    marginRight: theme.spacing(2),
+    marginRight: 36
+  },
+  hide: {
+    display: "none"
+  },
+  drawer: {
+    width: drawerWidth,
+    flexShrink: 0,
+    whiteSpace: "nowrap"
+  },
+  drawerOpen: {
+    width: drawerWidth,
+    transition: theme.transitions.create("width", {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.enteringScreen
+    })
+  },
+  drawerClose: {
+    transition: theme.transitions.create("width", {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.leavingScreen
+    }),
+    overflowX: "hidden",
+    width: theme.spacing(7) + 1,
     [theme.breakpoints.up("sm")]: {
-      display: "none"
+      width: theme.spacing(9) + 1
     }
   },
-  toolbar: theme.mixins.toolbar,
-  drawerPaper: {
-    width: drawerWidth
+  toolbar: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    padding: theme.spacing(0, 1),
+    ...theme.mixins.toolbar
   },
   content: {
     flexGrow: 1,
     width: "100%",
-    padding: theme.spacing(3)
+    backgroundColor: theme.palette.background.paper,
+    padding: theme.spacing(4),
+    paddingTop: 90
   },
   button: {
     margin: theme.spacing(1)
@@ -80,6 +117,24 @@ const useStyles = makeStyles(theme => ({
   },
   padding: {
     padding: theme.spacing.unit
+  },
+  component_with_margin: {
+    margin: theme.spacing(1)
+  },
+  gridList: {
+    width: "100%",
+    height: 670,
+    backgroundColor: "#3f51b5"
+  },
+  message: {
+    minWidth: "100%"
+  },
+  rightDrawer: {
+    width: drawerWidth,
+    flexShrink: 0
+  },
+  drawerPaper: {
+    width: drawerWidth
   }
 }));
 
@@ -97,93 +152,79 @@ class MainView extends React.Component {
       console.log("ok");
     };
 
-    const drawer = (
-      <div>
-        <div className={this.props.classes.toolbar} />
-        <Divider />
-        <List>
-          {["Persona1", "Persona2", "Persona3", "Persona4"].map(
-            (text, index) => (
-              <ListItem button key={text}>
-                <ListItemIcon>
-                  {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
-                </ListItemIcon>
-                <ListItemText primary={text} />
-              </ListItem>
-            )
-          )}
-        </List>
-        <Divider />
-        <List>
-          {["Nuova chat", "Logout"].map((text, index) => (
-            <ListItem button key={text} onClick={this.props.handleLogout}>
-              <ListItemIcon>
-                {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
-              </ListItemIcon>
-              <ListItemText primary={text} />
-            </ListItem>
-          ))}
-          <ListItem button key="Nuova chattina" onClick={handleNewChat}>
-            <ListItemIcon>
-              <InboxIcon />
-            </ListItemIcon>
-            <ListItemText primary="Nuova chattina" />
-          </ListItem>
-        </List>
-      </div>
-    );
-
     return (
       <div className={this.props.classes.root}>
         <CssBaseline />
-        <AppBar position="fixed" className={this.props.classes.appBar}>
+        <AppBar
+          position="fixed"
+          className={clsx(this.props.classes.appBar, {
+            [this.props.classes.appBarShift]: this.props.mobileOpen
+          })}
+        >
           <Toolbar>
             <IconButton
               color="inherit"
               aria-label="open drawer"
-              edge="start"
               onClick={handleDrawerToggle}
-              className={this.props.classes.menuButton}
+              edge="start"
+              className={clsx(this.props.classes.menuButton, {
+                [this.props.classes.hide]: this.props.mobileOpen
+              })}
             >
               <MenuIcon />
             </IconButton>
-            <Typography variant="h6" noWrap>
-              Responsive drawer
+            <Typography variant="h5" noWrap>
+              Chat P2P
             </Typography>
           </Toolbar>
         </AppBar>
-        <nav className={this.props.classes.drawer} aria-label="mailbox folders">
-          {/* The implementation can be swapped with js to avoid SEO duplication of links. */}
-          <Hidden smUp implementation="css">
-            <Drawer
-              container={container}
-              variant="temporary"
-              anchor={this.props.theme.direction === "rtl" ? "right" : "left"}
-              open={this.props.mobileOpen}
-              onClose={handleDrawerToggle}
-              classes={{
-                paper: this.props.classes.drawerPaper
-              }}
-              ModalProps={{
-                keepMounted: true // Better open performance on mobile.
-              }}
-            >
-              {drawer}
-            </Drawer>
-          </Hidden>
-          <Hidden xsDown implementation="css">
-            <Drawer
-              classes={{
-                paper: this.props.classes.drawerPaper
-              }}
-              variant="permanent"
-              open
-            >
-              {drawer}
-            </Drawer>
-          </Hidden>
-        </nav>
+        <Drawer
+          variant="permanent"
+          className={clsx(this.props.classes.drawer, {
+            [this.props.classes.drawerOpen]: this.props.mobileOpen,
+            [this.props.classes.drawerClose]: !this.props.mobileOpen
+          })}
+          classes={{
+            paper: clsx({
+              [this.props.classes.drawerOpen]: this.props.mobileOpen,
+              [this.props.classes.drawerClose]: !this.props.mobileOpen
+            })
+          }}
+        >
+          <div className={this.props.classes.toolbar}>
+            <IconButton onClick={handleDrawerToggle}>
+              {this.props.theme.direction === "rtl" ? (
+                <ChevronRightIcon />
+              ) : (
+                <ChevronLeftIcon />
+              )}
+            </IconButton>
+          </div>
+          <Divider />
+          <List>
+            {["Chats", "Friends"].map((text, index) => (
+              <ListItem button key={text}>
+                <ListItemIcon>
+                  {index % 2 === 0 ? <ChatIcon /> : <PeopleIcon />}
+                </ListItemIcon>
+                <ListItemText primary={text} />
+              </ListItem>
+            ))}
+          </List>
+          <Divider />
+          <List>
+            {["Settings", "Logout"].map((text, index) => (
+              <ListItem button key={text}>
+                <ListItemIcon>
+                  {index % 2 === 0 ? <SettingsIcon /> : <ExitToAppIcon />}
+                </ListItemIcon>
+                <ListItemText primary={text} />
+              </ListItem>
+            ))}
+          </List>
+        </Drawer>
         <Chat classes={this.props.classes} />
+        <AccountList classes={this.props.classes} />
         <NewChatDialog open={newChatDialogOpen} handleClose={handleNewChat} />
       </div>
     );
@@ -317,6 +358,8 @@ class MainApp extends React.Component {
           classes={this.props.classes}
           theme={this.props.theme}
           handleLogout={this.handleLogout}
+          mobileOpen={this.props.mobileOpen}
+          setMobileOpen={this.props.setMobileOpen}
         />
       );
     }
@@ -341,36 +384,61 @@ class Chat extends React.Component {
   render() {
     return (
       <main height="100vh" className={this.props.classes.content}>
-        <div className={this.props.classes.toolbar} />
-        <Grid
-          container
-          direction="column"
-          justify="space-between"
-          alignItems="stretch"
-          spacing={2}
-        >
-          <MessageRow
-            isReceived
-            senderName="Gianni"
-            message="Ciao come va? Tutto ok?"
-          />
-          <MessageBox
-            position={"left"}
-            type={"photo"}
-            text={"react.svg"}
-            data={{
-              uri: "https://facebook.github.io/react/img/logo.svg",
-              status: {
-                click: false,
-                loading: 0
+        <div />
+        <Grid container direction="row" alignItems="stretch">
+          <Grid item className={this.props.classes.component_with_margin}>
+            <Avatar>S</Avatar>
+          </Grid>
+          <Grid item>
+            <Typography
+              variant="h5"
+              className={this.props.classes.component_with_margin}
+            >
+              Simone
+            </Typography>
+          </Grid>
+        </Grid>
+        <Divider />
+        <GridList className={this.props.classes.gridList} cols={1}>
+          <MessageList
+            className="message-list"
+            className={this.props.classes.message}
+            lockable={true}
+            toBottomHeight={"100%"}
+            dataSource={[
+              {
+                position: "right",
+                type: "text",
+                text: "Ciao bello come va?",
+                date: new Date()
+              },
+              {
+                position: "left",
+                type: "text",
+                text: "Si tutto bene, te come va la quarantena?",
+                date: new Date()
+              },
+              {
+                position: "right",
+                type: "text",
+                text: "Potrebbe andar meglio, sto cazz di virus",
+                date: new Date()
+              },
+              {
+                position: "left",
+                type: "text",
+                text: "Eh gia, bella merda",
+                date: new Date()
               }
-            }}
+            ]}
           />
-          <MessageRow
-            senderName="Simone"
-            message="Ma si dai, tutto bene. Tu?"
-          />
-          <MessageInput classes={this.props.classes} />
+        </GridList>
+        <Grid container direction="column" alignItems="stretch">
+          <Grid item className={this.props.classes.component_with_margin}>
+            <Grid container direction="row" alignItems="stretch">
+              <MessageInput classes={this.props.classes} />
+            </Grid>
+          </Grid>
         </Grid>
       </main>
     );
@@ -404,6 +472,49 @@ class MessageInput extends React.Component {
           </Grid>
         </Grid>
       </Grid>
+    );
+  }
+}
+
+class AccountList extends React.Component {
+  render() {
+    return (
+      <Drawer
+        className={this.props.classes.rightDrawer}
+        variant="permanent"
+        anchor="right"
+      >
+        <div className={this.props.classes.toolbar} />
+        <ChatList
+          className="chat-list"
+          dataSource={[
+            {
+              avatar: "https://facebook.github.io/react/img/logo.svg",
+              alt: "Reactjs",
+              title: "Marco",
+              subtitle: "What are you doing?",
+              date: new Date(),
+              unread: 0
+            },
+            {
+              avatar: "https://facebook.github.io/react/img/logo.svg",
+              alt: "Reactjs",
+              title: "Giovanni",
+              subtitle: "What are you doing?",
+              date: new Date(),
+              unread: 0
+            },
+            {
+              avatar: "https://facebook.github.io/react/img/logo.svg",
+              alt: "Reactjs",
+              title: "Paolo",
+              subtitle: "What are you doing?",
+              date: new Date(),
+              unread: 0
+            }
+          ]}
+        />
+      </Drawer>
     );
   }
 }
