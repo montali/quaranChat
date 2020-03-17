@@ -84,7 +84,7 @@ class MainView extends React.Component {
       },
       openChatID: "1234",
       newChatDialogOpen: false,
-      videoCallOpen: false
+      inCall: false
     };
     this.streamRef = React.createRef();
     this.handleNewChat = this.handleNewChat.bind(this);
@@ -199,18 +199,17 @@ class MainView extends React.Component {
   }
 
   handleCallRequest() {
-    console.log("CALL!");
     // Open popup lightbox
     this.setState({ videoCallOpen: true });
     // Instantiate peerjs call
     if (navigator.mediaDevices.getUserMedia) {
       navigator.mediaDevices
-        .getUserMedia({ video: true })
+        .getUserMedia({ audio: true, video: true })
         .then(myStream => {
           var call = this.props.peer.call(this.state.openChatID, myStream);
           call.on("stream", stream => {
             this.streamRef.current.srcObject = stream;
-            console.log(this.streamRef);
+            this.setState({ inCall: true });
           });
         })
         .catch(function(err0r) {
@@ -221,17 +220,15 @@ class MainView extends React.Component {
 
   handleIncomingCall(call) {
     // Instantiate peerjs call
-    console.log("got a call!");
-
     if (navigator.mediaDevices.getUserMedia) {
       navigator.mediaDevices
-        .getUserMedia({ video: true })
+        .getUserMedia({ audio: true, video: true })
         .then(myStream => {
           call.answer(myStream);
           call.on("stream", stream => {
             // Open popup lightbox
             this.streamRef.current.srcObject = stream;
-            console.log(this.streamRef);
+            this.setState({ inCall: true });
           });
         })
         .catch(function(err0r) {
@@ -246,20 +243,32 @@ class MainView extends React.Component {
     const handleDrawerToggle = () => {
       this.props.setMobileOpen(!this.props.mobileOpen);
     };
-    const videoStream = (
-      <video width="1280" height="720" ref={this.streamRef} />
-    );
+
+    let callLightBox;
+    if (this.state.inCall) {
+      callLightBox = (
+        <div className={this.props.classes.videoCallDiv}>
+          <video
+            className={this.props.classes.videoStream}
+            ref={this.streamRef}
+            autoPlay
+          />
+        </div>
+      );
+    } else {
+      callLightBox = (
+        <div className={this.props.classes.videoCallDiv} hidden>
+          <video
+            className={this.props.classes.videoStream}
+            ref={this.streamRef}
+            autoPlay
+          />
+        </div>
+      );
+    }
     return (
       <div className={this.props.classes.root}>
-        {videoStream}
-        <FsLightbox
-          toggler={this.state.videoCallOpen}
-          onClose={() => {
-            this.setState({ videoCallOpen: false });
-            this.forceUpdate();
-          }}
-          customSources={[videoStream]}
-        />
+        {callLightBox}
         <CssBaseline />
         <AppBar
           position="fixed"

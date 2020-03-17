@@ -92,6 +92,23 @@ const useStyles = makeStyles(theme => ({
   },
   drawerPaper: {
     width: drawerWidth
+  },
+  videoCallDiv: {
+    position: "fixed",
+    zIndex: 999,
+    width: "100%",
+    height: "100%",
+    textAlign: "center",
+    top: 0,
+    left: 0,
+    background: "rgba(0, 0, 0, 0.8)"
+  },
+  videoStream: {
+    marginLeft: "auto",
+    marginRight: "auto",
+    display: "block",
+    width: "1280",
+    height: "720"
   }
 }));
 
