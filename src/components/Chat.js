@@ -11,6 +11,8 @@ import Avatar from "@material-ui/core/Avatar";
 import Typography from "@material-ui/core/Typography";
 import Divider from "@material-ui/core/Divider";
 import GridList from "@material-ui/core/GridList";
+import VideoCallIcon from "@material-ui/icons/VideoCall";
+import IconButton from "@material-ui/core/IconButton";
 
 // Local components
 import MessageInput from "./MessageInput";
@@ -53,6 +55,16 @@ class Chat extends React.Component {
             >
               {this.props.chatData.username}
             </Typography>
+          </Grid>
+          <Grid item>
+            {" "}
+            <IconButton
+              color="primary"
+              aria-label="Videocall"
+              onClick={this.props.callHandler}
+            >
+              <VideoCallIcon />
+            </IconButton>
           </Grid>
         </Grid>
         <Divider />
