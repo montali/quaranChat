@@ -51,7 +51,9 @@ class Chat extends React.Component {
             <Paper className={this.props.classes.paper} variant="outlined">
               <Grid container direction="row" alignItems="stretch">
                 <Grid item className={this.props.classes.component_with_margin}>
-                  <Avatar>{this.props.chatData.username.charAt(0)}</Avatar>
+                  <Avatar>
+                    {this.props.chatData.username.toUpperCase().charAt(0)}
+                  </Avatar>
                 </Grid>
                 <Grid item>
                   <Typography
@@ -60,6 +62,16 @@ class Chat extends React.Component {
                   >
                     {this.props.chatData.username}
                   </Typography>
+                </Grid>
+                <Grid item>
+                  {" "}
+                  <IconButton
+                    color="primary"
+                    aria-label="Videocall"
+                    onClick={this.props.callHandler}
+                  >
+                    <VideoCallIcon />
+                  </IconButton>
                 </Grid>
               </Grid>
             </Paper>
@@ -75,25 +87,15 @@ class Chat extends React.Component {
               />
             </GridList>
           </Grid>
-          <Grid item>
-            {" "}
-            <IconButton
-              color="primary"
-              aria-label="Videocall"
-              onClick={this.props.callHandler}
-            >
-              <VideoCallIcon />
-            </IconButton>
-          </Grid>
-            <Paper className={this.props.classes.paper} variant="outlined">
-              <MessageInput
-                onSend={this.sendHandler}
-                classes={this.props.classes}
-                onTextChange={this.textChangeHandler}
-                inputText={this.state.inputText}
-              />
-            </Paper>
-          </Grid>
+
+          <Paper className={this.props.classes.paper} variant="outlined">
+            <MessageInput
+              onSend={this.sendHandler}
+              classes={this.props.classes}
+              onTextChange={this.textChangeHandler}
+              inputText={this.state.inputText}
+            />
+          </Paper>
         </Grid>
       </main>
     );

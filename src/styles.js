@@ -82,6 +82,7 @@ const useStyles = makeStyles(theme => ({
     display: "block",
     width: "1280",
     height: "720"
+  },
   paper: {
     backgroundColor: theme.palette.text.paper
   }

@@ -20,7 +20,8 @@ class AccountList extends React.Component {
           : "";
       if (this.props.chats.hasOwnProperty(chat)) {
         chatDataSource.push({
-          avatar: "https://facebook.github.io/react/img/logo.svg",
+          avatar:
+            "https://cdn.icon-icons.com/icons2/1674/PNG/512/person_110935.png",
           peerID: chat,
           alt: "Reactjs",
           title: this.props.chats[chat].username,
