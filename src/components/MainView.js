@@ -16,6 +16,8 @@ import ChevronRightIcon from "@material-ui/icons/ChevronRight";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemIcon from "@material-ui/core/ListItemIcon";
 import ListItemText from "@material-ui/core/ListItemText";
+import Fab from "@material-ui/core/Fab";
+import CallEndIcon from "@material-ui/icons/CallEnd";
 import ChatIcon from "@material-ui/icons/Chat";
 import SettingsIcon from "@material-ui/icons/Settings";
 import ExitToAppIcon from "@material-ui/icons/ExitToApp";
@@ -209,7 +211,13 @@ class MainView extends React.Component {
           var call = this.props.peer.call(this.state.openChatID, myStream);
           call.on("stream", stream => {
             this.streamRef.current.srcObject = stream;
-            this.setState({ inCall: true });
+            this.setState({ inCall: true, call: call });
+          });
+          call.on("close", () => {
+            this.setState({ inCall: false });
+            myStream.getTracks().forEach(function(track) {
+              track.stop();
+            });
           });
         })
         .catch(function(err0r) {
@@ -228,7 +236,13 @@ class MainView extends React.Component {
           call.on("stream", stream => {
             // Open popup lightbox
             this.streamRef.current.srcObject = stream;
-            this.setState({ inCall: true });
+            this.setState({ inCall: true, call: call });
+          });
+          call.on("close", () => {
+            this.setState({ inCall: false });
+            myStream.getTracks().forEach(function(track) {
+              track.stop();
+            });
           });
         })
         .catch(function(err0r) {
@@ -253,6 +267,13 @@ class MainView extends React.Component {
             ref={this.streamRef}
             autoPlay
           />
+          <Fab
+            color="primary"
+            aria-label="add"
+            onClick={() => this.state.call.close()}
+          >
+            <CallEndIcon />
+          </Fab>
         </div>
       );
     } else {
