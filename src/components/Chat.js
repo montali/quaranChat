@@ -11,6 +11,7 @@ import Avatar from "@material-ui/core/Avatar";
 import Typography from "@material-ui/core/Typography";
 import VideocamIcon from "@material-ui/icons/Videocam";
 import GridList from "@material-ui/core/GridList";
+import VideoCallIcon from "@material-ui/icons/VideoCall";
 import Paper from "@material-ui/core/Paper";
 import Box from "@material-ui/core/Box";
 import IconButton from "@material-ui/core/IconButton";
@@ -75,6 +76,15 @@ class Chat extends React.Component {
             </GridList>
           </Grid>
           <Grid item>
+            {" "}
+            <IconButton
+              color="primary"
+              aria-label="Videocall"
+              onClick={this.props.callHandler}
+            >
+              <VideoCallIcon />
+            </IconButton>
+          </Grid>
             <Paper className={this.props.classes.paper} variant="outlined">
               <MessageInput
                 onSend={this.sendHandler}

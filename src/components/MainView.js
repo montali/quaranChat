@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 //import "../App.css";
 
 // Material UI
@@ -14,6 +14,8 @@ import Divider from "@material-ui/core/Divider";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemIcon from "@material-ui/core/ListItemIcon";
 import ListItemText from "@material-ui/core/ListItemText";
+import Fab from "@material-ui/core/Fab";
+import CallEndIcon from "@material-ui/icons/CallEnd";
 import ChatIcon from "@material-ui/icons/Chat";
 import SettingsIcon from "@material-ui/icons/Settings";
 import ExitToAppIcon from "@material-ui/icons/ExitToApp";
@@ -27,6 +29,7 @@ import TextField from "@material-ui/core/TextField";
 // Local imports
 import clsx from "clsx";
 import axios from "axios";
+import FsLightbox from "fslightbox-react";
 
 // Local components
 import Chat from "./Chat";
@@ -85,24 +88,36 @@ class MainView extends React.Component {
         }
       },
       openChatID: "1234",
-      newChatDialogOpen: false
+      newChatDialogOpen: false,
+      inCall: false
     };
+    this.streamRef = React.createRef();
     this.handleNewChat = this.handleNewChat.bind(this);
     this.handleChange = this.handleChange.bind(this);
     this.handleNewConnection = this.handleNewConnection.bind(this);
     this.handleSendMessage = this.handleSendMessage.bind(this);
     this.handleChatChange = this.handleChatChange.bind(this);
+    this.handleCallRequest = this.handleCallRequest.bind(this);
+    this.handleIncomingCall = this.handleIncomingCall.bind(this);
+  }
+
+  componentDidMount() {
+    this.props.peer.on("connection", this.handleNewConnection);
+    this.props.peer.on("call", this.handleIncomingCall);
   }
 
   handleChatChange(chat) {
-    console.log(chat);
-    console.log(this.state);
     this.setState({ openChatID: chat.peerID });
   }
 
   handleDataReceived(message, connection) {
     message.position = "left";
-    console.log(message);
+    message.date = new Date();
+    message.dateString =
+      new Date().getHours().toString() +
+      ":" +
+      new Date().getMinutes().toString();
+
     this.state.chats[connection.peer].messages.push(message);
     this.forceUpdate();
   }
@@ -124,27 +139,30 @@ class MainView extends React.Component {
   }
 
   handleNewConnection(connection) {
-    // TODO: Get username by ID from server
-    var username = "mario";
-    var chats = this.state.chats;
-    chats[connection.peer] = {
-      connection: connection,
-      messages: [],
-      username: username
-    };
-    this.setState({ chats: chats });
+    var username = "";
+    // Get username by ID from server
+    axios
+      .get("http://40ena.monta.li:40015/username/" + connection.peer, {
+        crossDomain: true
+      })
+      .then(res => {
+        username = res.data;
+        var chats = this.state.chats;
+        chats[connection.peer] = {
+          connection: connection,
+          messages: [],
+          username: username
+        };
+        this.setState({ chats: chats });
+      })
+      .catch(error => {
+        username = "anonymous";
+      });
     connection.on("open", () => {
       connection.on("data", data => {
         this.handleDataReceived(data, connection);
       });
     });
-    // TODO: add the chat to our menu
-  }
-
-  // Funzione per generare lista messaggi come vuole la libreria prendendo in input lo state?
-
-  componentDidMount() {
-    this.props.peer.on("connection", this.handleNewConnection);
   }
 
   handleChange(event) {
@@ -152,8 +170,6 @@ class MainView extends React.Component {
   }
 
   handleNewChat(target) {
-    console.log(this.state.query);
-
     // Request the ID to the server
     axios
       .get("http://40ena.monta.li:40015/id/" + this.state.query, {
@@ -169,6 +185,7 @@ class MainView extends React.Component {
           messages: []
         };
         connection.on("open", () => {
+          console.log("connection open");
           connection.on("data", data => {
             this.handleDataReceived(data, connection);
           });
@@ -183,18 +200,96 @@ class MainView extends React.Component {
           loginSnackbar: true,
           snackbarMessage: "Wrong login inserted!"
         });*/
-        console.log(error);
       });
   }
 
+  handleCallRequest() {
+    // Open popup lightbox
+    this.setState({ videoCallOpen: true });
+    // Instantiate peerjs call
+    if (navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices
+        .getUserMedia({ audio: true, video: true })
+        .then(myStream => {
+          var call = this.props.peer.call(this.state.openChatID, myStream);
+          call.on("stream", stream => {
+            this.streamRef.current.srcObject = stream;
+            this.setState({ inCall: true, call: call });
+          });
+          call.on("close", () => {
+            this.setState({ inCall: false });
+            myStream.getTracks().forEach(function(track) {
+              track.stop();
+            });
+          });
+        })
+        .catch(function(err0r) {
+          console.log(err0r);
+        });
+    }
+  }
+
+  handleIncomingCall(call) {
+    // Instantiate peerjs call
+    if (navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices
+        .getUserMedia({ audio: true, video: true })
+        .then(myStream => {
+          call.answer(myStream);
+          call.on("stream", stream => {
+            // Open popup lightbox
+            this.streamRef.current.srcObject = stream;
+            this.setState({ inCall: true, call: call });
+          });
+          call.on("close", () => {
+            this.setState({ inCall: false });
+            myStream.getTracks().forEach(function(track) {
+              track.stop();
+            });
+          });
+        })
+        .catch(function(err0r) {
+          console.log(err0r);
+        });
+    }
+  }
+
   render() {
-    console.log(this.state);
     const chatData = this.state.chats[this.state.openChatID];
 
     const handleDrawerToggle = () => {
       this.props.setMobileOpen(!this.props.mobileOpen);
     };
 
+    let callLightBox;
+    if (this.state.inCall) {
+      callLightBox = (
+        <div className={this.props.classes.videoCallDiv}>
+          <video
+            className={this.props.classes.videoStream}
+            ref={this.streamRef}
+            autoPlay
+          />
+          <Fab
+            color="primary"
+            aria-label="add"
+            onClick={() => this.state.call.close()}
+          >
+            <CallEndIcon />
+          </Fab>
+        </div>
+      );
+    } else {
+      callLightBox = (
+        <div className={this.props.classes.videoCallDiv} hidden>
+          <video
+            className={this.props.classes.videoStream}
+            ref={this.streamRef}
+            autoPlay
+          />
+        </div>
+      );
+    }
     const drawer = (
       <div>
         <div
@@ -226,6 +321,7 @@ class MainView extends React.Component {
 
     return (
       <div className={this.props.classes.root}>
+        {callLightBox}
         <CssBaseline />
         <AppBar position="fixed" className={this.props.classes.appBar}>
           <Toolbar>
@@ -278,6 +374,7 @@ class MainView extends React.Component {
           classes={this.props.classes}
           chatData={chatData}
           onSendHandler={this.handleSendMessage}
+          callHandler={this.handleCallRequest}
         />
         <NewChatDialog
           open={this.state.newChatDialogOpen}
