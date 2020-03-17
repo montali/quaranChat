@@ -16,6 +16,7 @@ class MessageInput extends React.Component {
           direction="row"
           justify="flex-start"
           alignItems="center"
+          className={this.props.classes.component_with_margin}
         >
           <Grid item xs={11}>
             <TextField

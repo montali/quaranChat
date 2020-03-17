@@ -11,8 +11,6 @@ import Drawer from "@material-ui/core/Drawer";
 import MenuIcon from "@material-ui/icons/Menu";
 import List from "@material-ui/core/List";
 import Divider from "@material-ui/core/Divider";
-import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
-import ChevronRightIcon from "@material-ui/icons/ChevronRight";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemIcon from "@material-ui/core/ListItemIcon";
 import ListItemText from "@material-ui/core/ListItemText";
@@ -20,6 +18,11 @@ import ChatIcon from "@material-ui/icons/Chat";
 import SettingsIcon from "@material-ui/icons/Settings";
 import ExitToAppIcon from "@material-ui/icons/ExitToApp";
 import PeopleIcon from "@material-ui/icons/People";
+import SearchIcon from "@material-ui/icons/Search";
+import Hidden from "@material-ui/core/Hidden";
+import Grid from "@material-ui/core/Grid";
+import AccountCircle from "@material-ui/icons/AccountCircle";
+import TextField from "@material-ui/core/TextField";
 
 // Local imports
 import clsx from "clsx";
@@ -192,90 +195,89 @@ class MainView extends React.Component {
       this.props.setMobileOpen(!this.props.mobileOpen);
     };
 
-    return (
-      <div className={this.props.classes.root}>
-        <CssBaseline />
-        <AppBar
-          position="fixed"
-          className={clsx(this.props.classes.appBar, {
-            [this.props.classes.appBarShift]: this.props.mobileOpen
-          })}
-        >
-          <Toolbar>
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              onClick={handleDrawerToggle}
-              edge="start"
-              className={clsx(this.props.classes.menuButton, {
-                [this.props.classes.hide]: this.props.mobileOpen
-              })}
-            >
-              <MenuIcon />
-            </IconButton>
-            <Typography variant="h5" noWrap>
-              Chat P2P
-            </Typography>
-          </Toolbar>
-        </AppBar>
-        <Drawer
-          variant="permanent"
-          className={clsx(this.props.classes.drawer, {
-            [this.props.classes.drawerOpen]: this.props.mobileOpen,
-            [this.props.classes.drawerClose]: !this.props.mobileOpen
-          })}
-          classes={{
-            paper: clsx({
-              [this.props.classes.drawerOpen]: this.props.mobileOpen,
-              [this.props.classes.drawerClose]: !this.props.mobileOpen
-            })
-          }}
-        >
-          <div className={this.props.classes.toolbar}>
-            <IconButton onClick={handleDrawerToggle}>
-              {this.props.theme.direction === "rtl" ? (
-                <ChevronRightIcon />
-              ) : (
-                <ChevronLeftIcon />
-              )}
-            </IconButton>
-          </div>
-          <Divider />
-          <List>
-            {["Search user", "Friends"].map((text, index) => (
-              <ListItem
-                button
-                key={text}
-                onClick={() => this.setState({ newChatDialogOpen: true })}
-              >
-                <ListItemIcon>
-                  {index % 2 === 0 ? <ChatIcon /> : <PeopleIcon />}
-                </ListItemIcon>
-                <ListItemText primary={text} />
-              </ListItem>
-            ))}
-          </List>
-          <Divider />
-          <List>
-            {["Settings", "Logout"].map((text, index) => (
-              <ListItem button key={text}>
-                <ListItemIcon>
-                  {index % 2 === 0 ? <SettingsIcon /> : <ExitToAppIcon />}
-                </ListItemIcon>
-                <ListItemText primary={text} />
-              </ListItem>
-            ))}
-          </List>
-        </Drawer>
-        <Chat
-          classes={this.props.classes}
-          chatData={chatData}
-          onSendHandler={this.handleSendMessage}
+    const drawer = (
+      <div>
+        <div
+          className={this.props.classes.toolbar}
+          style={{ backgroundColor: "#3f51b5" }}
         />
+        <div className={this.props.classes.component_with_margin}>
+          <Grid container spacing={1} alignItems="flex-end">
+            <Grid item className={this.props.classes.component_with_margin}>
+              <SearchIcon />
+            </Grid>
+            <TextField
+              className={this.props.classes.component_with_margin}
+              label="Search User"
+              id="outlined-size-small"
+              variant="outlined"
+              size="small"
+            />
+          </Grid>
+        </div>
+        <Divider />
         <AccountList
           classes={this.props.classes}
           chats={this.state.chats}
           onClick={this.handleChatChange}
+        />
+      </div>
+    );
+
+    return (
+      <div className={this.props.classes.root}>
+        <CssBaseline />
+        <AppBar position="fixed" className={this.props.classes.appBar}>
+          <Toolbar>
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="start"
+              onClick={handleDrawerToggle}
+              className={this.props.classes.menuButton}
+            >
+              <MenuIcon />
+            </IconButton>
+            <Typography variant="h6" noWrap>
+              QuaranChat
+            </Typography>
+          </Toolbar>
+        </AppBar>
+        <nav className={this.props.classes.drawer} aria-label="mailbox folders">
+          {/* The implementation can be swapped with js to avoid SEO duplication of links. */}
+          <Hidden smUp implementation="css">
+            <Drawer
+              container={this.props.container}
+              variant="temporary"
+              anchor={this.props.theme.direction === "rtl" ? "right" : "left"}
+              open={this.props.mobileOpen}
+              onClose={handleDrawerToggle}
+              classes={{
+                paper: this.props.classes.drawerPaper
+              }}
+              ModalProps={{
+                keepMounted: true // Better open performance on mobile.
+              }}
+            >
+              {drawer}
+            </Drawer>
+          </Hidden>
+          <Hidden xsDown implementation="css">
+            <Drawer
+              classes={{
+                paper: this.props.classes.drawerPaper
+              }}
+              variant="permanent"
+              open
+            >
+              {drawer}
+            </Drawer>
+          </Hidden>
+        </nav>
+        <Chat
+          classes={this.props.classes}
+          chatData={chatData}
+          onSendHandler={this.handleSendMessage}
         />
         <NewChatDialog
           open={this.state.newChatDialogOpen}
