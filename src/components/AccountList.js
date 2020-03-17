@@ -9,8 +9,6 @@ class AccountList extends React.Component {
   render() {
     var chatDataSource = [];
     for (var chat in this.props.chats) {
-      console.log(this.props.chats);
-      console.log(chat);
       const messageLength = this.props.chats[chat].messages.length;
       const date =
         messageLength > 0
