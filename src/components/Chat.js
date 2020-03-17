@@ -9,9 +9,11 @@ import { MessageList } from "react-chat-elements";
 import Grid from "@material-ui/core/Grid";
 import Avatar from "@material-ui/core/Avatar";
 import Typography from "@material-ui/core/Typography";
-import Divider from "@material-ui/core/Divider";
+import VideocamIcon from "@material-ui/icons/Videocam";
 import GridList from "@material-ui/core/GridList";
 import VideoCallIcon from "@material-ui/icons/VideoCall";
+import Paper from "@material-ui/core/Paper";
+import Box from "@material-ui/core/Box";
 import IconButton from "@material-ui/core/IconButton";
 
 // Local components
@@ -42,19 +44,36 @@ class Chat extends React.Component {
       <MessageRow senderName={message.sender} message={message.text} />
     ));*/
     return (
-      <main height="100vh" className={this.props.classes.content}>
-        <div />
-        <Grid container direction="row" alignItems="stretch">
-          <Grid item className={this.props.classes.component_with_margin}>
-            <Avatar>{this.props.chatData.username.charAt(0)}</Avatar>
+      <main className={this.props.classes.content}>
+        <div className={this.props.classes.toolbar} />
+        <Grid container direction="column" alignItems="stretch">
+          <Grid item>
+            <Paper className={this.props.classes.paper} variant="outlined">
+              <Grid container direction="row" alignItems="stretch">
+                <Grid item className={this.props.classes.component_with_margin}>
+                  <Avatar>{this.props.chatData.username.charAt(0)}</Avatar>
+                </Grid>
+                <Grid item>
+                  <Typography
+                    variant="h6"
+                    className={this.props.classes.component_with_margin}
+                  >
+                    {this.props.chatData.username}
+                  </Typography>
+                </Grid>
+              </Grid>
+            </Paper>
           </Grid>
           <Grid item>
-            <Typography
-              variant="h5"
-              className={this.props.classes.component_with_margin}
-            >
-              {this.props.chatData.username}
-            </Typography>
+            <GridList className={this.props.classes.gridList} cols={1}>
+              <MessageList
+                className="message-list"
+                className={this.props.classes.message}
+                lockable={true}
+                toBottomHeight={"100%"}
+                dataSource={this.props.chatData.messages}
+              />
+            </GridList>
           </Grid>
           <Grid item>
             {" "}
@@ -66,27 +85,14 @@ class Chat extends React.Component {
               <VideoCallIcon />
             </IconButton>
           </Grid>
-        </Grid>
-        <Divider />
-        <GridList className={this.props.classes.gridList} cols={1}>
-          <MessageList
-            className="message-list"
-            className={this.props.classes.message}
-            lockable={true}
-            toBottomHeight={"100%"}
-            dataSource={this.props.chatData.messages}
-          />
-        </GridList>
-        <Grid container direction="column" alignItems="stretch">
-          <Grid item className={this.props.classes.component_with_margin}>
-            <Grid container direction="row" alignItems="stretch">
+            <Paper className={this.props.classes.paper} variant="outlined">
               <MessageInput
-                classes={this.props.classes}
                 onSend={this.sendHandler}
+                classes={this.props.classes}
                 onTextChange={this.textChangeHandler}
                 inputText={this.state.inputText}
               />
-            </Grid>
+            </Paper>
           </Grid>
         </Grid>
       </main>

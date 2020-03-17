@@ -5,9 +5,6 @@ import React from "react";
 import "react-chat-elements/dist/main.css";
 import { ChatList } from "react-chat-elements";
 
-// Material UI
-import Drawer from "@material-ui/core/Drawer";
-
 class AccountList extends React.Component {
   render() {
     var chatDataSource = [];
@@ -34,18 +31,11 @@ class AccountList extends React.Component {
       }
     }
     return (
-      <Drawer
-        className={this.props.classes.rightDrawer}
-        variant="permanent"
-        anchor="right"
-      >
-        <div className={this.props.classes.toolbar} />
-        <ChatList
-          className="chat-list"
-          dataSource={chatDataSource}
-          onClick={this.props.onClick}
-        />
-      </Drawer>
+      <ChatList
+        className="chat-list"
+        dataSource={chatDataSource}
+        onClick={this.props.onClick}
+      />
     );
   }
 }

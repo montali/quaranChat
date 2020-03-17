@@ -1,6 +1,6 @@
 import { makeStyles } from "@material-ui/core/styles";
 
-const drawerWidth = 240;
+const drawerWidth = 350;
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -8,63 +8,36 @@ const useStyles = makeStyles(theme => ({
     alignItems: "flex-end",
     height: "100vh"
   },
-  appBar: {
-    zIndex: theme.zIndex.drawer + 1,
-    transition: theme.transitions.create(["width", "margin"], {
-      easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.leavingScreen
-    })
+  drawer: {
+    [theme.breakpoints.up("sm")]: {
+      width: drawerWidth,
+      flexShrink: 0
+    }
   },
-  appBarShift: {
-    marginLeft: drawerWidth,
-    width: `calc(100% - ${drawerWidth}px)`,
-    transition: theme.transitions.create(["width", "margin"], {
-      easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.enteringScreen
-    })
+  appBar: {
+    [theme.breakpoints.up("sm")]: {
+      width: `calc(100% - ${drawerWidth}px)`,
+      marginLeft: drawerWidth
+    }
   },
   menuButton: {
-    marginRight: 36
+    marginRight: theme.spacing(2),
+    [theme.breakpoints.up("sm")]: {
+      display: "none"
+    }
+  },
+  toolbar: theme.mixins.toolbar,
+  drawerPaper: {
+    width: drawerWidth
   },
   hide: {
     display: "none"
   },
-  drawer: {
-    width: drawerWidth,
-    flexShrink: 0,
-    whiteSpace: "nowrap"
-  },
-  drawerOpen: {
-    width: drawerWidth,
-    transition: theme.transitions.create("width", {
-      easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.enteringScreen
-    })
-  },
-  drawerClose: {
-    transition: theme.transitions.create("width", {
-      easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.leavingScreen
-    }),
-    overflowX: "hidden",
-    width: theme.spacing(7) + 1,
-    [theme.breakpoints.up("sm")]: {
-      width: theme.spacing(9) + 1
-    }
-  },
-  toolbar: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    padding: theme.spacing(0, 1),
-    ...theme.mixins.toolbar
-  },
   content: {
     flexGrow: 1,
-    width: "100%",
-    backgroundColor: theme.palette.background.paper,
-    padding: theme.spacing(4),
-    paddingTop: 90
+    paddingLeft: theme.spacing(8),
+    paddingRight: theme.spacing(8),
+    paddingBottom: theme.spacing(3)
   },
   button: {
     margin: theme.spacing(1)
@@ -80,7 +53,7 @@ const useStyles = makeStyles(theme => ({
   },
   gridList: {
     width: "100%",
-    height: 670,
+    height: 640,
     backgroundColor: "#3f51b5"
   },
   message: {
@@ -109,6 +82,8 @@ const useStyles = makeStyles(theme => ({
     display: "block",
     width: "1280",
     height: "720"
+  paper: {
+    backgroundColor: theme.palette.text.paper
   }
 }));
 
