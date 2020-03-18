@@ -5,7 +5,7 @@ const drawerWidth = 350;
 const useStyles = makeStyles(theme => ({
   root: {
     display: "flex",
-    alignItems: "flex-end",
+    alignItems: "flex-start",
     height: "100vh"
   },
   drawer: {
@@ -27,6 +27,9 @@ const useStyles = makeStyles(theme => ({
     }
   },
   toolbar: theme.mixins.toolbar,
+  space_under_toolbar: {
+    minHeight: 90
+  },
   drawerPaper: {
     width: drawerWidth
   },
@@ -34,26 +37,20 @@ const useStyles = makeStyles(theme => ({
     display: "none"
   },
   content: {
+    height: "85%",
     flexGrow: 1,
-    paddingLeft: theme.spacing(8),
-    paddingRight: theme.spacing(8),
-    paddingBottom: theme.spacing(3)
+    paddingLeft: theme.spacing(6),
+    paddingRight: theme.spacing(6)
   },
   button: {
     margin: theme.spacing(1)
-  },
-  margin: {
-    margin: theme.spacing.unit * 2
-  },
-  padding: {
-    padding: theme.spacing.unit
   },
   component_with_margin: {
     margin: theme.spacing(1)
   },
   gridList: {
+    height: "85%",
     width: "100%",
-    height: 640,
     backgroundColor: "#3f51b5"
   },
   message: {
@@ -62,9 +59,6 @@ const useStyles = makeStyles(theme => ({
   rightDrawer: {
     width: drawerWidth,
     flexShrink: 0
-  },
-  drawerPaper: {
-    width: drawerWidth
   },
   videoCallDiv: {
     position: "fixed",

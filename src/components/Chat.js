@@ -11,9 +11,8 @@ import Avatar from "@material-ui/core/Avatar";
 import Typography from "@material-ui/core/Typography";
 import VideocamIcon from "@material-ui/icons/Videocam";
 import GridList from "@material-ui/core/GridList";
-import VideoCallIcon from "@material-ui/icons/VideoCall";
 import Paper from "@material-ui/core/Paper";
-import Box from "@material-ui/core/Box";
+import Container from "@material-ui/core/Container";
 import IconButton from "@material-ui/core/IconButton";
 
 // Local components
@@ -44,60 +43,55 @@ class Chat extends React.Component {
       <MessageRow senderName={message.sender} message={message.text} />
     ));*/
     return (
-      <main className={this.props.classes.content}>
-        <div className={this.props.classes.toolbar} />
-        <Grid container direction="column" alignItems="stretch">
-          <Grid item>
-            <Paper className={this.props.classes.paper} variant="outlined">
-              <Grid container direction="row" alignItems="stretch">
-                <Grid item className={this.props.classes.component_with_margin}>
-                  <Avatar>
-                    {this.props.chatData.username.toUpperCase().charAt(0)}
-                  </Avatar>
-                </Grid>
-                <Grid item>
-                  <Typography
-                    variant="h6"
-                    className={this.props.classes.component_with_margin}
-                  >
-                    {this.props.chatData.username}
-                  </Typography>
-                </Grid>
-                <Grid item>
-                  {" "}
-                  <IconButton
-                    color="primary"
-                    aria-label="Videocall"
-                    onClick={this.props.callHandler}
-                  >
-                    <VideoCallIcon />
-                  </IconButton>
-                </Grid>
-              </Grid>
-            </Paper>
+      <Container className={this.props.classes.content}>
+        <div className={this.props.classes.space_under_toolbar} />
+        <Paper className={this.props.classes.paper} variant="outlined">
+          <Grid container direction="row" alignItems="stretch">
+            <Grid item className={this.props.classes.component_with_margin}>
+              <Avatar>
+                {this.props.chatData.username.toUpperCase().charAt(0)}
+              </Avatar>
+            </Grid>
+            <Grid item>
+              <Typography
+                variant="h6"
+                className={this.props.classes.component_with_margin}
+              >
+                {this.props.chatData.username}
+              </Typography>
+            </Grid>
+            <Grid item>
+              {" "}
+              <IconButton
+                color="primary"
+                aria-label="Videocall"
+                onClick={this.props.callHandler}
+              >
+                <VideocamIcon />
+              </IconButton>
+            </Grid>
           </Grid>
-          <Grid item>
-            <GridList className={this.props.classes.gridList} cols={1}>
-              <MessageList
-                className="message-list"
-                className={this.props.classes.message}
-                lockable={true}
-                toBottomHeight={"100%"}
-                dataSource={this.props.chatData.messages}
-              />
-            </GridList>
-          </Grid>
+        </Paper>
 
-          <Paper className={this.props.classes.paper} variant="outlined">
-            <MessageInput
-              onSend={this.sendHandler}
-              classes={this.props.classes}
-              onTextChange={this.textChangeHandler}
-              inputText={this.state.inputText}
-            />
-          </Paper>
-        </Grid>
-      </main>
+        <GridList className={this.props.classes.gridList} cols={1}>
+          <MessageList
+            className="message-list"
+            className={this.props.classes.message}
+            lockable={true}
+            toBottomHeight={"100%"}
+            dataSource={this.props.chatData.messages}
+          />
+        </GridList>
+
+        <Paper className={this.props.classes.paper} variant="outlined">
+          <MessageInput
+            onSend={this.sendHandler}
+            classes={this.props.classes}
+            onTextChange={this.textChangeHandler}
+            inputText={this.state.inputText}
+          />
+        </Paper>
+      </Container>
     );
   }
 }
