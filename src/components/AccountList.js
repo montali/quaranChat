@@ -27,10 +27,13 @@ class AccountList extends React.Component {
           title: this.props.chats[chat].username,
           subtitle: subtitle,
           date: date,
-          unread: 0
+          dateString:
+            date.getHours().toString() + ":" + date.getMinutes().toString(),
+          unread: this.props.chats[chat].unread
         });
       }
     }
+    chatDataSource.sort((a, b) => (a.date < b.date ? 1 : -1));
     return (
       <ChatList
         className="chat-list"

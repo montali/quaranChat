@@ -20,7 +20,9 @@ import ChatIcon from "@material-ui/icons/Chat";
 import SettingsIcon from "@material-ui/icons/Settings";
 import ExitToAppIcon from "@material-ui/icons/ExitToApp";
 import PeopleIcon from "@material-ui/icons/People";
-import SearchIcon from "@material-ui/icons/Search";
+import PersonAddIcon from "@material-ui/icons/PersonAdd";
+import AddIcon from "@material-ui/icons/Add";
+
 import Hidden from "@material-ui/core/Hidden";
 import Grid from "@material-ui/core/Grid";
 import AccountCircle from "@material-ui/icons/AccountCircle";
@@ -34,7 +36,6 @@ import FsLightbox from "fslightbox-react";
 // Local components
 import Chat from "./Chat";
 import AccountList from "./AccountList";
-import NewChatDialog from "./NewChatDialog";
 
 class MainView extends React.Component {
   constructor(props) {
@@ -43,6 +44,7 @@ class MainView extends React.Component {
       chats: {
         "1234": {
           username: "marcolone",
+          unread: 0,
           messages: [
             {
               position: "right",
@@ -88,12 +90,11 @@ class MainView extends React.Component {
         }
       },
       openChatID: "1234",
-      newChatDialogOpen: false,
       inCall: false
     };
     this.streamRef = React.createRef();
     this.handleNewChat = this.handleNewChat.bind(this);
-    this.handleChange = this.handleChange.bind(this);
+    this.handleQueryChange = this.handleQueryChange.bind(this);
     this.handleNewConnection = this.handleNewConnection.bind(this);
     this.handleSendMessage = this.handleSendMessage.bind(this);
     this.handleChatChange = this.handleChatChange.bind(this);
@@ -108,6 +109,9 @@ class MainView extends React.Component {
 
   handleChatChange(chat) {
     this.setState({ openChatID: chat.peerID });
+    let chatData = this.state.chats;
+    chatData[chat.peerID].unread = 0;
+    this.setState({ chats: chatData });
   }
 
   handleDataReceived(message, connection) {
@@ -117,8 +121,12 @@ class MainView extends React.Component {
       new Date().getHours().toString() +
       ":" +
       new Date().getMinutes().toString();
-
-    this.state.chats[connection.peer].messages.push(message);
+    let chatData = this.state.chats;
+    if (this.state.openChatID !== connection.peer)
+      chatData[connection.peer].unread++;
+    chatData[connection.peer].messages.push(message);
+    this.setState({ chats: chatData });
+    console.log(this.state);
     this.forceUpdate();
   }
 
@@ -151,7 +159,8 @@ class MainView extends React.Component {
         chats[connection.peer] = {
           connection: connection,
           messages: [],
-          username: username
+          username: username,
+          unread: 0
         };
         this.setState({ chats: chats });
       })
@@ -165,11 +174,11 @@ class MainView extends React.Component {
     });
   }
 
-  handleChange(event) {
+  handleQueryChange(event) {
     this.setState({ query: event.target.value });
   }
 
-  handleNewChat(target) {
+  handleNewChat() {
     // Request the ID to the server
     axios
       .get("http://40ena.monta.li:40015/id/" + this.state.query, {
@@ -192,10 +201,11 @@ class MainView extends React.Component {
         });
         this.setState({ chats: chats });
         // Set openChatID to the new one
-        this.setState({ newChatDialogOpen: false, openChatID: res.data });
+        this.setState({ openChatID: res.data });
+        this.setState({ query: "" });
       })
       .catch(error => {
-        // Snackbar to report error
+        // TODO: Snackbar to report error
         /*setState({
           loginSnackbar: true,
           snackbarMessage: "Wrong login inserted!"
@@ -297,17 +307,34 @@ class MainView extends React.Component {
           style={{ backgroundColor: "#3f51b5" }}
         />
         <div className={this.props.classes.component_with_margin}>
-          <Grid container spacing={1} alignItems="flex-end">
+          <Grid container spacing={1} alignItems="center">
             <Grid item className={this.props.classes.component_with_margin}>
-              <SearchIcon />
+              <PersonAddIcon />
             </Grid>
-            <TextField
-              className={this.props.classes.component_with_margin}
-              label="Search User"
-              id="outlined-size-small"
-              variant="outlined"
-              size="small"
-            />
+            <Grid item className={this.props.classes.component_with_margin}>
+              <TextField
+                label="Add new friend"
+                id="outlined-size-small"
+                variant="outlined"
+                size="small"
+                value={this.state.query}
+                onChange={this.handleQueryChange}
+                onKeyPress={event => {
+                  if (event.key === "Enter") {
+                    this.handleNewChat();
+                  }
+                }}
+              />
+            </Grid>
+            <Grid item className={this.props.classes.component_with_margin}>
+              <IconButton
+                color="primary"
+                aria-label="Add user"
+                onClick={this.handleNewChat}
+              >
+                <AddIcon />
+              </IconButton>
+            </Grid>
           </Grid>
         </div>
         <Divider />
@@ -375,11 +402,6 @@ class MainView extends React.Component {
           chatData={chatData}
           onSendHandler={this.handleSendMessage}
           callHandler={this.handleCallRequest}
-        />
-        <NewChatDialog
-          open={this.state.newChatDialogOpen}
-          handleClose={this.handleNewChat}
-          handleChange={this.handleChange}
         />
       </div>
     );
