@@ -10,10 +10,16 @@ class AccountList extends React.Component {
     var chatDataSource = [];
     for (var chat in this.props.chats) {
       const messageLength = this.props.chats[chat].messages.length;
-      const date =
-        messageLength > 0
-          ? this.props.chats[chat].messages[messageLength - 1].date
-          : new Date();
+      let date = new Date();
+      console.log(this.props.chats[chat].messages[messageLength - 1].date);
+
+      if (messageLength > 0) {
+        date =
+          this.props.chats[chat].messages[messageLength - 1].date instanceof
+          Date
+            ? this.props.chats[chat].messages[messageLength - 1].date
+            : new Date(this.props.chats[chat].messages[messageLength - 1].date);
+      }
       const subtitle =
         messageLength > 0
           ? this.props.chats[chat].messages[messageLength - 1].text

@@ -93,6 +93,7 @@ class Login extends React.Component {
                   autoComplete="username"
                   autoFocus
                   onChange={this.props.handleFormChange}
+                  defaultValue={this.props.oldUsername}
                 />
                 <TextField
                   variant="outlined"

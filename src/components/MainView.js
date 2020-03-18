@@ -40,56 +40,60 @@ import AccountList from "./AccountList";
 class MainView extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {
-      chats: {
-        "1234": {
-          username: "marcolone",
-          unread: 0,
-          messages: [
-            {
-              position: "right",
-              type: "text",
-              text: "Ciao bello come va?",
-              date: new Date(),
-              dateString:
-                new Date().getHours().toString() +
-                ":" +
-                new Date().getMinutes().toString()
-            },
-            {
-              position: "left",
-              type: "text",
-              text: "Si tutto bene, te come va la quarantena?",
-              date: new Date(),
-              dateString:
-                new Date().getHours().toString() +
-                ":" +
-                new Date().getMinutes().toString()
-            },
-            {
-              position: "right",
-              type: "text",
-              text: "Potrebbe andar meglio, sto cazz di virus",
-              date: new Date(),
-              dateString:
-                new Date().getHours().toString() +
-                ":" +
-                new Date().getMinutes().toString()
-            },
-            {
-              position: "left",
-              type: "text",
-              text: "Eh gia, bella merda",
-              date: new Date(),
-              dateString:
-                new Date().getHours().toString() +
-                ":" +
-                new Date().getMinutes().toString()
-            }
-          ]
+    this.ls = require("local-storage");
+    this.safeStringify = require("fast-safe-stringify");
+    let chatData = JSON.parse(this.ls("chats"));
+    console.log(chatData);
+    if (chatData == null) chatData = {};
+    chatData.demo = {
+      username: "Demo user",
+      unread: 0,
+      messages: [
+        {
+          position: "right",
+          type: "text",
+          text: "This is a message.",
+          date: new Date(),
+          dateString:
+            new Date().getHours().toString() +
+            ":" +
+            new Date().getMinutes().toString()
+        },
+        {
+          position: "left",
+          type: "text",
+          text: "This is another message.",
+          date: new Date(),
+          dateString:
+            new Date().getHours().toString() +
+            ":" +
+            new Date().getMinutes().toString()
+        },
+        {
+          position: "right",
+          type: "text",
+          text: "Did you know you can call users?",
+          date: new Date(),
+          dateString:
+            new Date().getHours().toString() +
+            ":" +
+            new Date().getMinutes().toString()
+        },
+        {
+          position: "left",
+          type: "text",
+          text: "Yes! You just have to click the videocamera icon.",
+          date: new Date(),
+          dateString:
+            new Date().getHours().toString() +
+            ":" +
+            new Date().getMinutes().toString()
         }
-      },
-      openChatID: "1234",
+      ]
+    };
+    this.state = {
+      chats: chatData,
+      openChatID: "demo",
       inCall: false
     };
     this.streamRef = React.createRef();
@@ -112,6 +116,9 @@ class MainView extends React.Component {
     let chatData = this.state.chats;
     chatData[chat.peerID].unread = 0;
     this.setState({ chats: chatData });
+    this.ls("chats", this.safeStringify(chatData));
+    let memdata = JSON.parse(this.ls("chats"));
+    console.log(memdata);
   }
 
   handleDataReceived(message, connection) {
@@ -126,7 +133,9 @@ class MainView extends React.Component {
       chatData[connection.peer].unread++;
     chatData[connection.peer].messages.push(message);
     this.setState({ chats: chatData });
-    console.log(this.state);
+    delete chatData.__proto__;
+    console.log(chatData);
+    this.ls("chats", this.safeStringify(chatData));
     this.forceUpdate();
   }
 
@@ -142,7 +151,12 @@ class MainView extends React.Component {
     };
     this.state.chats[recipientID].connection.send(message);
     message.position = "right";
-    this.state.chats[recipientID].messages.push(message);
+    let chatData = this.state.chats;
+    chatData[recipientID].messages.push(message);
+    this.setState({ chats: chatData });
+    delete chatData.__proto__;
+
+    this.ls("chats", this.safeStringify(chatData));
     this.forceUpdate();
   }
 
@@ -163,6 +177,9 @@ class MainView extends React.Component {
           unread: 0
         };
         this.setState({ chats: chats });
+        delete chats.__proto__;
+
+        this.ls("chats", this.safeStringify(chats));
       })
       .catch(error => {
         username = "anonymous";
@@ -200,6 +217,8 @@ class MainView extends React.Component {
           });
         });
         this.setState({ chats: chats });
+        delete chats.__proto__;
+        this.ls("chats", this.safeStringify(chats));
         // Set openChatID to the new one
         this.setState({ openChatID: res.data });
         this.setState({ query: "" });
