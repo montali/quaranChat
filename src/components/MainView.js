@@ -9,27 +9,17 @@ import IconButton from "@material-ui/core/IconButton";
 import Typography from "@material-ui/core/Typography";
 import Drawer from "@material-ui/core/Drawer";
 import MenuIcon from "@material-ui/icons/Menu";
-import List from "@material-ui/core/List";
 import Divider from "@material-ui/core/Divider";
-import ListItem from "@material-ui/core/ListItem";
-import ListItemIcon from "@material-ui/core/ListItemIcon";
-import ListItemText from "@material-ui/core/ListItemText";
 import Fab from "@material-ui/core/Fab";
 import CallEndIcon from "@material-ui/icons/CallEnd";
-import ChatIcon from "@material-ui/icons/Chat";
-import SettingsIcon from "@material-ui/icons/Settings";
-import ExitToAppIcon from "@material-ui/icons/ExitToApp";
-import PeopleIcon from "@material-ui/icons/People";
 import PersonAddIcon from "@material-ui/icons/PersonAdd";
 import AddIcon from "@material-ui/icons/Add";
 
 import Hidden from "@material-ui/core/Hidden";
 import Grid from "@material-ui/core/Grid";
-import AccountCircle from "@material-ui/icons/AccountCircle";
 import TextField from "@material-ui/core/TextField";
 
 // Local imports
-import clsx from "clsx";
 import axios from "axios";
 import FsLightbox from "fslightbox-react";
 
@@ -307,12 +297,13 @@ class MainView extends React.Component {
           style={{ backgroundColor: "#3f51b5" }}
         />
         <div className={this.props.classes.component_with_margin}>
-          <Grid container spacing={1} alignItems="center">
+          <Grid container alignItems="center">
             <Grid item className={this.props.classes.component_with_margin}>
               <PersonAddIcon />
             </Grid>
             <Grid item className={this.props.classes.component_with_margin}>
               <TextField
+                className={this.props.classes.textbox}
                 label="Add new friend"
                 id="outlined-size-small"
                 variant="outlined"
@@ -402,6 +393,7 @@ class MainView extends React.Component {
           chatData={chatData}
           onSendHandler={this.handleSendMessage}
           callHandler={this.handleCallRequest}
+          matches={this.props.matches}
         />
       </div>
     );

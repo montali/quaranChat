@@ -42,57 +42,103 @@ class Chat extends React.Component {
     /*const messageRows = this.props.chatData.messages.map(message => (
       <MessageRow senderName={message.sender} message={message.text} />
     ));*/
-    return (
-      <Container className={this.props.classes.content}>
-        <div className={this.props.classes.space_under_toolbar} />
-        <Paper className={this.props.classes.paper} variant="outlined">
-          <Grid container direction="row" alignItems="stretch">
-            <Grid item className={this.props.classes.component_with_margin}>
-              <Avatar>
-                {this.props.chatData.username.toUpperCase().charAt(0)}
-              </Avatar>
+    if (this.props.matches) {
+      return (
+        <Container className={this.props.classes.content}>
+          <div className={this.props.classes.space_under_toolbar} />
+          <Paper className={this.props.classes.paper} variant="outlined">
+            <Grid container direction="row" alignItems="stretch">
+              <Grid item className={this.props.classes.component_with_margin}>
+                <Avatar>
+                  {this.props.chatData.username.toUpperCase().charAt(0)}
+                </Avatar>
+              </Grid>
+              <Grid item>
+                <Typography
+                  variant="h6"
+                  className={this.props.classes.component_with_margin}
+                >
+                  {this.props.chatData.username}
+                </Typography>
+              </Grid>
+              <Grid item>
+                {" "}
+                <IconButton
+                  color="primary"
+                  aria-label="Videocall"
+                  onClick={this.props.callHandler}
+                >
+                  <VideocamIcon />
+                </IconButton>
+              </Grid>
             </Grid>
-            <Grid item>
-              <Typography
-                variant="h6"
-                className={this.props.classes.component_with_margin}
-              >
-                {this.props.chatData.username}
-              </Typography>
-            </Grid>
-            <Grid item>
-              {" "}
-              <IconButton
-                color="primary"
-                aria-label="Videocall"
-                onClick={this.props.callHandler}
-              >
-                <VideocamIcon />
-              </IconButton>
-            </Grid>
-          </Grid>
-        </Paper>
-
-        <GridList className={this.props.classes.gridList} cols={1}>
-          <MessageList
-            className="message-list"
-            className={this.props.classes.message}
-            lockable={true}
-            toBottomHeight={"100%"}
-            dataSource={this.props.chatData.messages}
-          />
-        </GridList>
-
-        <Paper className={this.props.classes.paper} variant="outlined">
+          </Paper>
+          <GridList className={this.props.classes.gridList} cols={1}>
+            <MessageList
+              className="message-list"
+              className={this.props.classes.message}
+              lockable={true}
+              toBottomHeight={"100%"}
+              dataSource={this.props.chatData.messages}
+            />
+          </GridList>
           <MessageInput
             onSend={this.sendHandler}
             classes={this.props.classes}
             onTextChange={this.textChangeHandler}
             inputText={this.state.inputText}
           />
-        </Paper>
-      </Container>
-    );
+        </Container>
+      );
+    } else {
+      return (
+        <Container className={this.props.classes.mobile_content}>
+          <div className={this.props.classes.toolbar} />
+          <Paper className={this.props.classes.paper} variant="outlined">
+            <Grid container direction="row" alignItems="stretch">
+              <Grid item className={this.props.classes.component_with_margin}>
+                <Avatar>
+                  {this.props.chatData.username.toUpperCase().charAt(0)}
+                </Avatar>
+              </Grid>
+              <Grid item>
+                <Typography
+                  variant="h6"
+                  className={this.props.classes.component_with_margin}
+                >
+                  {this.props.chatData.username}
+                </Typography>
+              </Grid>
+              <Grid item>
+                {" "}
+                <IconButton
+                  color="primary"
+                  aria-label="Videocall"
+                  onClick={this.props.callHandler}
+                >
+                  <VideocamIcon />
+                </IconButton>
+              </Grid>
+            </Grid>
+          </Paper>
+          <GridList className={this.props.classes.gridList} cols={1}>
+            <MessageList
+              className="message-list"
+              className={this.props.classes.message}
+              lockable={true}
+              toBottomHeight={"100%"}
+              dataSource={this.props.chatData.messages}
+            />
+          </GridList>
+          <MessageInput
+            onSend={this.sendHandler}
+            classes={this.props.classes}
+            onTextChange={this.textChangeHandler}
+            inputText={this.state.inputText}
+          />
+        </Container>
+      );
+    }
   }
 }
 

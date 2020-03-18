@@ -1,6 +1,7 @@
 import React from "react";
 import "./App.css";
 import { useTheme } from "@material-ui/core/styles";
+import useMediaQuery from "@material-ui/core/useMediaQuery";
 import axios from "axios";
 
 // Local components
@@ -138,6 +139,7 @@ class MainApp extends React.Component {
           mobileOpen={this.props.mobileOpen}
           setMobileOpen={this.props.setMobileOpen}
           peer={this.state.peer}
+          matches={this.props.matches}
         />
       );
     }
@@ -148,12 +150,14 @@ function App(props) {
   const classes = useStyles();
   const theme = useTheme();
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const matches = useMediaQuery("(min-width:1024px)");
   return (
     <MainApp
       classes={classes}
       theme={theme}
       mobileOpen={mobileOpen}
       setMobileOpen={setMobileOpen}
+      matches={matches}
     />
   );
 }

@@ -1,6 +1,6 @@
 import { makeStyles } from "@material-ui/core/styles";
 
-const drawerWidth = 350;
+const drawerWidth = 320;
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -30,6 +30,9 @@ const useStyles = makeStyles(theme => ({
   space_under_toolbar: {
     minHeight: 90
   },
+  mobile_toolbar: {
+    minHeight: 34
+  },
   drawerPaper: {
     width: drawerWidth
   },
@@ -41,6 +44,12 @@ const useStyles = makeStyles(theme => ({
     flexGrow: 1,
     paddingLeft: theme.spacing(6),
     paddingRight: theme.spacing(6)
+  },
+  mobile_content: {
+    height: "85%",
+    flexGrow: 1,
+    paddingLeft: theme.spacing(0),
+    paddingRight: theme.spacing(0)
   },
   button: {
     margin: theme.spacing(1)
@@ -79,6 +88,22 @@ const useStyles = makeStyles(theme => ({
   },
   paper: {
     backgroundColor: theme.palette.text.paper
+  },
+  textbox: {
+    maxWidth: 180
+  },
+  message_input: {
+    padding: "2px 4px",
+    display: "flex",
+    alignItems: "center"
+  },
+  input: {
+    marginLeft: theme.spacing(1),
+    flex: 1
+  },
+  divider: {
+    height: 28,
+    margin: 4
   }
 }));
 

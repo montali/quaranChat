@@ -2,51 +2,44 @@ import React from "react";
 //import "../App.css";
 
 // Material UI
-import Grid from "@material-ui/core/Grid";
-import TextField from "@material-ui/core/TextField";
-import IconButton from "@material-ui/core/IconButton";
+import InputBase from "@material-ui/core/InputBase";
+import Divider from "@material-ui/core/Divider";
 import SendIcon from "@material-ui/icons/Send";
+import IconButton from "@material-ui/core/IconButton";
+import Paper from "@material-ui/core/Paper";
 
 class MessageInput extends React.Component {
   render() {
     return (
-      <Grid item xs={12}>
-        <Grid
-          container
-          direction="row"
-          justify="flex-start"
-          alignItems="center"
-          className={this.props.classes.component_with_margin}
+      <Paper component="form" className={this.props.classes.message_input}>
+        <InputBase
+          id="outlined-textarea"
+          className={this.props.classes.input}
+          multiline
+          placeholder="Send a message"
+          inputProps={{ "aria-label": "Send a message" }}
+          value={this.props.inputText}
+          onChange={this.props.onTextChange}
+          onKeyPress={ev => {
+            if (ev.key === "Enter") {
+              ev.preventDefault();
+              this.props.onSend();
+            }
+          }}
+        />
+        <Divider
+          className={this.props.classes.divider}
+          orientation="vertical"
+        />
+        <IconButton
+          color="primary"
+          className={this.props.classes.iconButton}
+          aria-label="directions"
+          onClick={this.props.onSend}
         >
-          <Grid item xs={11}>
-            <TextField
-              id="outlined-textarea"
-              label="Invia un messaggio"
-              placeholder="Messaggio"
-              multiline
-              fullWidth
-              variant="outlined"
-              value={this.props.inputText}
-              onChange={this.props.onTextChange}
-              onKeyPress={ev => {
-                if (ev.key === "Enter") {
-                  ev.preventDefault();
-                  this.props.onSend();
-                }
-              }}
-            />
-          </Grid>
-          <Grid item xs={1}>
-            <IconButton
-              color="primary"
-              aria-label="Send message"
-              onClick={this.props.onSend}
-            >
-              <SendIcon />
-            </IconButton>
-          </Grid>
-        </Grid>
-      </Grid>
+          <SendIcon />
+        </IconButton>
+      </Paper>
     );
   }
 }
