@@ -48,6 +48,7 @@ class MainView extends React.Component {
     chatData.demo = {
       username: "Demo user",
       unread: 0,
+      online: true,
       messages: [
         {
           position: "right",
@@ -104,11 +105,91 @@ class MainView extends React.Component {
     this.handleChatChange = this.handleChatChange.bind(this);
     this.handleCallRequest = this.handleCallRequest.bind(this);
     this.handleIncomingCall = this.handleIncomingCall.bind(this);
+    this.checkSavedConnections = this.checkSavedConnections.bind(this);
+  }
+
+  pingPeer(peerID) {
+    let message = {
+      type: "ping",
+      text: this.props.peer.id
+    };
+    if (this.state.chats[peerID].connection != null) {
+      console.log(peerID);
+      try {
+        this.state.chats[peerID].connection.send(message);
+      } catch (error) {
+        this.setOffline(peerID);
+      }
+    } else this.setOffline(peerID);
+  }
+
+  setOffline(peerID) {
+    var chats = this.state.chats;
+    chats[peerID].online = false;
+    delete chats[peerID].connection;
+    // TODO: notify the username server!
+  }
+
+  checkSavedConnections() {
+    console.log(this.state);
+    for (let chat in this.state.chats) {
+      this.pingPeer(chat);
+      if (!this.state.chats[chat].online) {
+        axios
+          .get(
+            "http://40ena.monta.li:40015/id/" + this.state.chats[chat].username,
+            {
+              crossDomain: true
+            }
+          )
+          .then(res => {
+            // Connect our peer to the id and save the connection in chats
+            var connection = this.props.peer.connect(res.data);
+            var chats = this.state.chats;
+            chats[res.data] = {
+              connection: connection,
+              username: this.state.chats[chat].username,
+              messages: [...this.state.chats[chat].messages],
+              online: false
+            };
+            if (chat != res.data) {
+              delete chats[chat];
+            }
+            connection.on("open", () => {
+              chats[res.data].online = true;
+              connection.on("data", data => {
+                this.handleDataReceived(data, connection);
+              });
+              connection.on("error", error => {
+                this.setOffline(res.data);
+              });
+            });
+            this.setState({ chats: chats });
+            this.ls("chats", this.safeStringify(chats));
+          })
+          .catch(error => {
+            var chats = this.state.chats;
+            chats[chat] = {
+              connection: null,
+              username: chats[chat].username,
+              messages: [...chats[chat].messages],
+              online: false
+            };
+            this.setState({
+              chats: chats
+            });
+            this.ls("chats", this.safeStringify(chats));
+          });
+      }
+    }
   }
 
   componentDidMount() {
     this.props.peer.on("connection", this.handleNewConnection);
     this.props.peer.on("call", this.handleIncomingCall);
+    setTimeout(() => {
+      this.checkSavedConnections();
+    }, 5000);
   }
 
   handleChatChange(chat) {
@@ -174,8 +255,17 @@ class MainView extends React.Component {
           connection: connection,
           messages: [],
           username: username,
-          unread: 0
+          unread: 0,
+          online: true
         };
+        // Check if we had a previous connection, and delete it
+        for (const checkingChat in chats) {
+          if (chats[checkingChat].username == username) {
+            chats[connection.peer].messages = [...chats[checkingChat].messages];
+            chats[connection.peer].unread = chats[checkingChat].unread;
+            delete chats[checkingChat];
+          }
+        }
         this.setState({ chats: chats });
         delete chats.__proto__;
 
@@ -188,6 +278,9 @@ class MainView extends React.Component {
       connection.on("data", data => {
         this.handleDataReceived(data, connection);
       });
+      connection.on("error", error => {
+        this.setOffline(connection.peer);
+      });
     });
   }
 
@@ -195,10 +288,10 @@ class MainView extends React.Component {
     this.setState({ query: event.target.value });
   }
 
-  handleNewChat() {
+  openNewConnection(username, messages) {
     // Request the ID to the server
     axios
-      .get("http://40ena.monta.li:40015/id/" + this.state.query, {
+      .get("http://40ena.monta.li:40015/id/" + username, {
         crossDomain: true
       })
       .then(res => {
@@ -207,13 +300,17 @@ class MainView extends React.Component {
         var chats = this.state.chats;
         chats[res.data] = {
           connection: connection,
-          username: this.state.query,
-          messages: []
+          username: username,
+          messages: messages,
+          online: true
         };
         connection.on("open", () => {
           console.log("connection open");
           connection.on("data", data => {
             this.handleDataReceived(data, connection);
+          });
+          connection.on("error", error => {
+            this.setOffline(connection.peer);
           });
         });
         this.setState({ chats: chats });
@@ -230,6 +327,10 @@ class MainView extends React.Component {
           snackbarMessage: "Wrong login inserted!"
         });*/
       });
+  }
+
+  handleNewChat() {
+    this.openNewConnection(this.state.query, []);
   }
 
   handleCallRequest() {
