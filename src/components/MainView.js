@@ -42,12 +42,22 @@ class MainView extends React.Component {
     super(props);
     this.ls = require("local-storage");
     this.safeStringify = require("fast-safe-stringify");
-    let chatData = JSON.parse(this.ls("chats"));
+    const dateParser = chats => {
+      for (const chatKey in chats) {
+        chats[chatKey].messages.forEach((message, index, messages) => {
+          if (typeof message.date === "string") {
+            chats[chatKey].messages[index].date = new Date(message.date);
+          }
+        });
+      }
+      return chats;
+    };
+    let chatData = dateParser(JSON.parse(this.ls("chats")));
     if (chatData == null) chatData = {};
     chatData.demo = {
       username: "Demo user",
       unread: 0,
-      online: true,
+      online: false,
       messages: [
         {
           position: "right",
