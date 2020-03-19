@@ -43,7 +43,6 @@ class MainView extends React.Component {
     this.ls = require("local-storage");
     this.safeStringify = require("fast-safe-stringify");
     let chatData = JSON.parse(this.ls("chats"));
-    console.log(chatData);
     if (chatData == null) chatData = {};
     chatData.demo = {
       username: "Demo user",
@@ -106,6 +105,7 @@ class MainView extends React.Component {
     this.handleCallRequest = this.handleCallRequest.bind(this);
     this.handleIncomingCall = this.handleIncomingCall.bind(this);
     this.checkSavedConnections = this.checkSavedConnections.bind(this);
+    this.setOffline = this.setOffline.bind(this);
   }
 
   pingPeer(peerID) {
@@ -114,7 +114,6 @@ class MainView extends React.Component {
       text: this.props.peer.id
     };
     if (this.state.chats[peerID].connection != null) {
-      console.log(peerID);
       try {
         this.state.chats[peerID].connection.send(message);
       } catch (error) {
@@ -127,11 +126,11 @@ class MainView extends React.Component {
     var chats = this.state.chats;
     chats[peerID].online = false;
     delete chats[peerID].connection;
+    this.setState({ chats: chats });
     // TODO: notify the username server!
   }
 
   checkSavedConnections() {
-    console.log(this.state);
     for (let chat in this.state.chats) {
       this.pingPeer(chat);
       if (!this.state.chats[chat].online) {
@@ -152,11 +151,12 @@ class MainView extends React.Component {
               messages: [...this.state.chats[chat].messages],
               online: false
             };
-            if (chat != res.data) {
+            if (chat !== res.data) {
               delete chats[chat];
             }
             connection.on("open", () => {
               chats[res.data].online = true;
+              this.setState({ chats: chats });
               connection.on("data", data => {
                 this.handleDataReceived(data, connection);
               });
@@ -198,26 +198,24 @@ class MainView extends React.Component {
     chatData[chat.peerID].unread = 0;
     this.setState({ chats: chatData });
     this.ls("chats", this.safeStringify(chatData));
-    let memdata = JSON.parse(this.ls("chats"));
-    console.log(memdata);
   }
 
   handleDataReceived(message, connection) {
-    message.position = "left";
-    message.date = new Date();
-    message.dateString =
-      new Date().getHours().toString() +
-      ":" +
-      new Date().getMinutes().toString();
-    let chatData = this.state.chats;
-    if (this.state.openChatID !== connection.peer)
-      chatData[connection.peer].unread++;
-    chatData[connection.peer].messages.push(message);
-    this.setState({ chats: chatData });
-    delete chatData.__proto__;
-    console.log(chatData);
-    this.ls("chats", this.safeStringify(chatData));
-    this.forceUpdate();
+    if (message.type == "text") {
+      message.position = "left";
+      message.date = new Date();
+      message.dateString =
+        new Date().getHours().toString() +
+        ":" +
+        new Date().getMinutes().toString();
+      let chatData = this.state.chats;
+      if (this.state.openChatID !== connection.peer)
+        chatData[connection.peer].unread++;
+      chatData[connection.peer].messages.push(message);
+      this.setState({ chats: chatData });
+      this.ls("chats", this.safeStringify(chatData));
+      this.forceUpdate();
+    }
   }
 
   handleSendMessage(text, recipientID) {
@@ -235,7 +233,6 @@ class MainView extends React.Component {
     let chatData = this.state.chats;
     chatData[recipientID].messages.push(message);
     this.setState({ chats: chatData });
-    delete chatData.__proto__;
 
     this.ls("chats", this.safeStringify(chatData));
     this.forceUpdate();
@@ -260,15 +257,19 @@ class MainView extends React.Component {
         };
         // Check if we had a previous connection, and delete it
         for (const checkingChat in chats) {
-          if (chats[checkingChat].username == username) {
+          if (
+            chats[checkingChat].username === username &&
+            checkingChat != connection.peer
+          ) {
             chats[connection.peer].messages = [...chats[checkingChat].messages];
             chats[connection.peer].unread = chats[checkingChat].unread;
             delete chats[checkingChat];
+            if (this.state.openChatID == checkingChat) {
+              this.setState({ openChatID: connection.peer });
+            }
           }
         }
         this.setState({ chats: chats });
-        delete chats.__proto__;
-
         this.ls("chats", this.safeStringify(chats));
       })
       .catch(error => {
@@ -305,7 +306,6 @@ class MainView extends React.Component {
           online: true
         };
         connection.on("open", () => {
-          console.log("connection open");
           connection.on("data", data => {
             this.handleDataReceived(data, connection);
           });
