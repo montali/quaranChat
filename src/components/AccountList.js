@@ -10,21 +10,28 @@ class AccountList extends React.Component {
     var chatDataSource = [];
     for (var chat in this.props.chats) {
       const messageLength = this.props.chats[chat].messages.length;
-      const date =
-        messageLength > 0
-          ? this.props.chats[chat].messages[messageLength - 1].date
-          : new Date();
+      let date = new Date();
+      if (messageLength > 0) {
+        date =
+          this.props.chats[chat].messages[messageLength - 1].date instanceof
+          Date
+            ? this.props.chats[chat].messages[messageLength - 1].date
+            : new Date(this.props.chats[chat].messages[messageLength - 1].date);
+      }
       const subtitle =
         messageLength > 0
           ? this.props.chats[chat].messages[messageLength - 1].text
           : "";
+      const onlineString = this.props.chats[chat].online
+        ? " (Online)"
+        : "(Offline)";
       if (this.props.chats.hasOwnProperty(chat)) {
         chatDataSource.push({
           avatar:
             "https://cdn.icon-icons.com/icons2/1674/PNG/512/person_110935.png",
           peerID: chat,
           alt: "Reactjs",
-          title: this.props.chats[chat].username,
+          title: this.props.chats[chat].username + onlineString,
           subtitle: subtitle,
           date: date,
           dateString:

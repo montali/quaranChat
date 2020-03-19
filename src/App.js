@@ -15,7 +15,12 @@ import { useStyles } from "./styles.js";
 class MainApp extends React.Component {
   constructor(props) {
     super(props);
+    this.ls = require("local-storage");
     this.state = { loggedIn: false, loginError: false };
+    this.prevLoggedIn = this.ls("prevLoggedIn");
+    if (this.prevLoggedIn) {
+      this.state.oldUsername = this.ls("username");
+    }
     this.handleLoginChange = this.handleLoginChange.bind(this);
     this.handleLoginRequest = this.handleLoginRequest.bind(this);
     this.handleSnackbarClose = this.handleSnackbarClose.bind(this);
@@ -35,35 +40,47 @@ class MainApp extends React.Component {
   }
 
   handleLoginRequest(event) {
-    event.preventDefault();
+    if (event !== undefined) event.preventDefault();
     // Request an ID to the PeerJS server
     const peer = new Peer();
-    this.setState({ peer: peer });
-    const username = this.state.username;
-    const password = this.state.password;
-    const setState = this.setState.bind(this);
-    peer.on("open", id => {
-      // Connect to our login server and update the ID with a POST
-      axios
-        .post("http://40ena.monta.li:40015/id/" + username, {
-          password: password,
-          connectionID: id,
-          crossDomain: true
-        })
-        .then(res => {
-          setState({
-            loggedIn: true,
-            username: username,
-            password: password
+    this.setState({ peer: peer }, () => {
+      // If the username is already set, let's use that
+      console.log(this.state.oldUsername);
+      const username =
+        this.state.username == null && this.prevLoggedIn
+          ? this.state.oldUsername
+          : this.state.username;
+      const password = this.state.password;
+      const setState = this.setState.bind(this);
+      // If the user is changing account, delete the messages
+      if (this.prevLoggedIn && this.state.oldUsername != username) {
+        this.ls.remove("chats");
+      }
+      peer.on("open", id => {
+        // Connect to our login server and update the ID with a POST
+        axios
+          .post("http://40ena.monta.li:40015/id/" + username, {
+            password: password,
+            connectionID: id,
+            crossDomain: true
+          })
+          .then(res => {
+            console.log(this.state);
+            setState({
+              loggedIn: true,
+              username: username,
+              password: password
+            });
+            this.ls("prevLoggedIn", true);
+            this.ls("username", username);
+          })
+          .catch(error => {
+            setState({
+              loginSnackbar: true,
+              snackbarMessage: "Wrong login inserted!"
+            });
           });
-        })
-        .catch(error => {
-          setState({
-            loginSnackbar: true,
-            snackbarMessage: "Wrong login inserted!"
-          });
-          console.log(this.state);
-        });
+      });
     });
   }
   handleSignUpRequest() {
@@ -118,6 +135,7 @@ class MainApp extends React.Component {
   }
 
   render() {
+    console.log(this.state.loggedIn);
     if (!this.state.loggedIn) {
       return (
         <SignInPage
@@ -128,6 +146,7 @@ class MainApp extends React.Component {
           handleSnackbarClose={this.handleSnackbarClose}
           snackbarMessage={this.state.snackbarMessage}
           handleSignUp={this.handleSignUpRequest}
+          oldUsername={this.state.oldUsername}
         ></SignInPage>
       );
     } else {

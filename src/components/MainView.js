@@ -30,56 +30,70 @@ import AccountList from "./AccountList";
 class MainView extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {
-      chats: {
-        "1234": {
-          username: "marcolone",
-          unread: 0,
-          messages: [
-            {
-              position: "right",
-              type: "text",
-              text: "Ciao bello come va?",
-              date: new Date(),
-              dateString:
-                new Date().getHours().toString() +
-                ":" +
-                new Date().getMinutes().toString()
-            },
-            {
-              position: "left",
-              type: "text",
-              text: "Si tutto bene, te come va la quarantena?",
-              date: new Date(),
-              dateString:
-                new Date().getHours().toString() +
-                ":" +
-                new Date().getMinutes().toString()
-            },
-            {
-              position: "right",
-              type: "text",
-              text: "Potrebbe andar meglio, sto cazz di virus",
-              date: new Date(),
-              dateString:
-                new Date().getHours().toString() +
-                ":" +
-                new Date().getMinutes().toString()
-            },
-            {
-              position: "left",
-              type: "text",
-              text: "Eh gia, bella merda",
-              date: new Date(),
-              dateString:
-                new Date().getHours().toString() +
-                ":" +
-                new Date().getMinutes().toString()
-            }
-          ]
+    this.ls = require("local-storage");
+    this.safeStringify = require("fast-safe-stringify");
+    const dateParser = chats => {
+      for (const chatKey in chats) {
+        chats[chatKey].messages.forEach((message, index, messages) => {
+          if (typeof message.date === "string") {
+            chats[chatKey].messages[index].date = new Date(message.date);
+          }
+        });
+      }
+      return chats;
+    };
+    let chatData = dateParser(JSON.parse(this.ls("chats")));
+    if (chatData == null) chatData = {};
+    chatData.demo = {
+      username: "Demo user",
+      unread: 0,
+      online: false,
+      messages: [
+        {
+          position: "right",
+          type: "text",
+          text: "This is a message.",
+          date: new Date(),
+          dateString:
+            new Date().getHours().toString() +
+            ":" +
+            new Date().getMinutes().toString()
+        },
+        {
+          position: "left",
+          type: "text",
+          text: "This is another message.",
+          date: new Date(),
+          dateString:
+            new Date().getHours().toString() +
+            ":" +
+            new Date().getMinutes().toString()
+        },
+        {
+          position: "right",
+          type: "text",
+          text: "Did you know you can call users?",
+          date: new Date(),
+          dateString:
+            new Date().getHours().toString() +
+            ":" +
+            new Date().getMinutes().toString()
+        },
+        {
+          position: "left",
+          type: "text",
+          text: "Yes! You just have to click the videocamera icon.",
+          date: new Date(),
+          dateString:
+            new Date().getHours().toString() +
+            ":" +
+            new Date().getMinutes().toString()
         }
-      },
-      openChatID: "1234",
+      ]
+    };
+    this.state = {
+      chats: chatData,
+      openChatID: "demo",
       inCall: false
     };
     this.streamRef = React.createRef();
@@ -90,11 +104,92 @@ class MainView extends React.Component {
     this.handleChatChange = this.handleChatChange.bind(this);
     this.handleCallRequest = this.handleCallRequest.bind(this);
     this.handleIncomingCall = this.handleIncomingCall.bind(this);
+    this.checkSavedConnections = this.checkSavedConnections.bind(this);
+    this.setOffline = this.setOffline.bind(this);
+  }
+
+  pingPeer(peerID) {
+    let message = {
+      type: "ping",
+      text: this.props.peer.id
+    };
+    if (this.state.chats[peerID].connection != null) {
+      try {
+        this.state.chats[peerID].connection.send(message);
+      } catch (error) {
+        this.setOffline(peerID);
+      }
+    } else this.setOffline(peerID);
+  }
+
+  setOffline(peerID) {
+    var chats = this.state.chats;
+    chats[peerID].online = false;
+    delete chats[peerID].connection;
+    this.setState({ chats: chats });
+    // TODO: notify the username server!
+  }
+
+  checkSavedConnections() {
+    for (let chat in this.state.chats) {
+      this.pingPeer(chat);
+      if (!this.state.chats[chat].online) {
+        axios
+          .get(
+            "http://40ena.monta.li:40015/id/" + this.state.chats[chat].username,
+            {
+              crossDomain: true
+            }
+          )
+          .then(res => {
+            // Connect our peer to the id and save the connection in chats
+            var connection = this.props.peer.connect(res.data);
+            var chats = this.state.chats;
+            chats[res.data] = {
+              connection: connection,
+              username: this.state.chats[chat].username,
+              messages: [...this.state.chats[chat].messages],
+              online: false
+            };
+            if (chat !== res.data) {
+              delete chats[chat];
+            }
+            connection.on("open", () => {
+              chats[res.data].online = true;
+              this.setState({ chats: chats });
+              connection.on("data", data => {
+                this.handleDataReceived(data, connection);
+              });
+              connection.on("error", error => {
+                this.setOffline(res.data);
+              });
+            });
+            this.setState({ chats: chats });
+            this.ls("chats", this.safeStringify(chats));
+          })
+          .catch(error => {
+            var chats = this.state.chats;
+            chats[chat] = {
+              connection: null,
+              username: chats[chat].username,
+              messages: [...chats[chat].messages],
+              online: false
+            };
+            this.setState({
+              chats: chats
+            });
+            this.ls("chats", this.safeStringify(chats));
+          });
+      }
+    }
   }
 
   componentDidMount() {
     this.props.peer.on("connection", this.handleNewConnection);
     this.props.peer.on("call", this.handleIncomingCall);
+    setTimeout(() => {
+      this.checkSavedConnections();
+    }, 5000);
   }
 
   handleChatChange(chat) {
@@ -102,22 +197,25 @@ class MainView extends React.Component {
     let chatData = this.state.chats;
     chatData[chat.peerID].unread = 0;
     this.setState({ chats: chatData });
+    this.ls("chats", this.safeStringify(chatData));
   }
 
   handleDataReceived(message, connection) {
-    message.position = "left";
-    message.date = new Date();
-    message.dateString =
-      new Date().getHours().toString() +
-      ":" +
-      new Date().getMinutes().toString();
-    let chatData = this.state.chats;
-    if (this.state.openChatID !== connection.peer)
-      chatData[connection.peer].unread++;
-    chatData[connection.peer].messages.push(message);
-    this.setState({ chats: chatData });
-    console.log(this.state);
-    this.forceUpdate();
+    if (message.type == "text") {
+      message.position = "left";
+      message.date = new Date();
+      message.dateString =
+        new Date().getHours().toString() +
+        ":" +
+        new Date().getMinutes().toString();
+      let chatData = this.state.chats;
+      if (this.state.openChatID !== connection.peer)
+        chatData[connection.peer].unread++;
+      chatData[connection.peer].messages.push(message);
+      this.setState({ chats: chatData });
+      this.ls("chats", this.safeStringify(chatData));
+      this.forceUpdate();
+    }
   }
 
   handleSendMessage(text, recipientID) {
@@ -132,7 +230,11 @@ class MainView extends React.Component {
     };
     this.state.chats[recipientID].connection.send(message);
     message.position = "right";
-    this.state.chats[recipientID].messages.push(message);
+    let chatData = this.state.chats;
+    chatData[recipientID].messages.push(message);
+    this.setState({ chats: chatData });
+
+    this.ls("chats", this.safeStringify(chatData));
     this.forceUpdate();
   }
 
@@ -150,9 +252,25 @@ class MainView extends React.Component {
           connection: connection,
           messages: [],
           username: username,
-          unread: 0
+          unread: 0,
+          online: true
         };
+        // Check if we had a previous connection, and delete it
+        for (const checkingChat in chats) {
+          if (
+            chats[checkingChat].username === username &&
+            checkingChat != connection.peer
+          ) {
+            chats[connection.peer].messages = [...chats[checkingChat].messages];
+            chats[connection.peer].unread = chats[checkingChat].unread;
+            delete chats[checkingChat];
+            if (this.state.openChatID == checkingChat) {
+              this.setState({ openChatID: connection.peer });
+            }
+          }
+        }
         this.setState({ chats: chats });
+        this.ls("chats", this.safeStringify(chats));
       })
       .catch(error => {
         username = "anonymous";
@@ -161,6 +279,9 @@ class MainView extends React.Component {
       connection.on("data", data => {
         this.handleDataReceived(data, connection);
       });
+      connection.on("error", error => {
+        this.setOffline(connection.peer);
+      });
     });
   }
 
@@ -168,10 +289,10 @@ class MainView extends React.Component {
     this.setState({ query: event.target.value });
   }
 
-  handleNewChat() {
+  openNewConnection(username, messages) {
     // Request the ID to the server
     axios
-      .get("http://40ena.monta.li:40015/id/" + this.state.query, {
+      .get("http://40ena.monta.li:40015/id/" + username, {
         crossDomain: true
       })
       .then(res => {
@@ -180,16 +301,21 @@ class MainView extends React.Component {
         var chats = this.state.chats;
         chats[res.data] = {
           connection: connection,
-          username: this.state.query,
-          messages: []
+          username: username,
+          messages: messages,
+          online: true
         };
         connection.on("open", () => {
-          console.log("connection open");
           connection.on("data", data => {
             this.handleDataReceived(data, connection);
           });
+          connection.on("error", error => {
+            this.setOffline(connection.peer);
+          });
         });
         this.setState({ chats: chats });
+        delete chats.__proto__;
+        this.ls("chats", this.safeStringify(chats));
         // Set openChatID to the new one
         this.setState({ openChatID: res.data });
         this.setState({ query: "" });
@@ -201,6 +327,10 @@ class MainView extends React.Component {
           snackbarMessage: "Wrong login inserted!"
         });*/
       });
+  }
+
+  handleNewChat() {
+    this.openNewConnection(this.state.query, []);
   }
 
   handleCallRequest() {
