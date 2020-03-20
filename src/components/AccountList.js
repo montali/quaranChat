@@ -5,6 +5,10 @@ import React from "react";
 import "react-chat-elements/dist/main.css";
 import { ChatList } from "react-chat-elements";
 
+// Images
+import onlineUser from "../res/online_user.png";
+import offlineUser from "../res/offline_user.png";
+
 class AccountList extends React.Component {
   render() {
     var chatDataSource = [];
@@ -27,15 +31,17 @@ class AccountList extends React.Component {
         : "(Offline)";
       if (this.props.chats.hasOwnProperty(chat)) {
         chatDataSource.push({
-          avatar:
-            "https://cdn.icon-icons.com/icons2/1674/PNG/512/person_110935.png",
+          avatar: this.props.chats[chat].online ? onlineUser : offlineUser,
           peerID: chat,
-          alt: "Reactjs",
+          alt: "User avatar",
           title: this.props.chats[chat].username + onlineString,
           subtitle: subtitle,
           date: date,
+          // The following line is kinda esoteric but we need that in order to display 2 digits
           dateString:
-            date.getHours().toString() + ":" + date.getMinutes().toString(),
+            ("0" + date.getHours()).slice(-2) +
+            ":" +
+            ("0" + date.getMinutes()).slice(-2),
           unread: this.props.chats[chat].unread
         });
       }

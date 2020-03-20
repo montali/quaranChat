@@ -14,6 +14,7 @@ import Fab from "@material-ui/core/Fab";
 import CallEndIcon from "@material-ui/icons/CallEnd";
 import PersonAddIcon from "@material-ui/icons/PersonAdd";
 import AddIcon from "@material-ui/icons/Add";
+import Snackbar from "@material-ui/core/Snackbar";
 
 import Hidden from "@material-ui/core/Hidden";
 import Grid from "@material-ui/core/Grid";
@@ -55,9 +56,9 @@ class MainView extends React.Component {
           text: "This is a message.",
           date: new Date(),
           dateString:
-            new Date().getHours().toString() +
+            ("0" + new Date().getHours()).slice(-2) +
             ":" +
-            new Date().getMinutes().toString()
+            ("0" + new Date().getMinutes()).slice(-2)
         },
         {
           position: "left",
@@ -65,9 +66,9 @@ class MainView extends React.Component {
           text: "This is another message.",
           date: new Date(),
           dateString:
-            new Date().getHours().toString() +
+            ("0" + new Date().getHours()).slice(-2) +
             ":" +
-            new Date().getMinutes().toString()
+            ("0" + new Date().getMinutes()).slice(-2)
         },
         {
           position: "right",
@@ -75,9 +76,9 @@ class MainView extends React.Component {
           text: "Did you know you can call users?",
           date: new Date(),
           dateString:
-            new Date().getHours().toString() +
+            ("0" + new Date().getHours()).slice(-2) +
             ":" +
-            new Date().getMinutes().toString()
+            ("0" + new Date().getMinutes()).slice(-2)
         },
         {
           position: "left",
@@ -85,16 +86,17 @@ class MainView extends React.Component {
           text: "Yes! You just have to click the videocamera icon.",
           date: new Date(),
           dateString:
-            new Date().getHours().toString() +
+            ("0" + new Date().getHours()).slice(-2) +
             ":" +
-            new Date().getMinutes().toString()
+            ("0" + new Date().getMinutes()).slice(-2)
         }
       ]
     };
     this.state = {
       chats: chatData,
       openChatID: "demo",
-      inCall: false
+      inCall: false,
+      snackbarOpen: false
     };
     this.streamRef = React.createRef();
     this.handleNewChat = this.handleNewChat.bind(this);
@@ -106,6 +108,11 @@ class MainView extends React.Component {
     this.handleIncomingCall = this.handleIncomingCall.bind(this);
     this.checkSavedConnections = this.checkSavedConnections.bind(this);
     this.setOffline = this.setOffline.bind(this);
+    this.handleSnackbarClose = this.handleSnackbarClose.bind(this);
+  }
+
+  handleSnackbarClose() {
+    this.setState({ snackbarOpen: false });
   }
 
   pingPeer(peerID) {
@@ -127,7 +134,6 @@ class MainView extends React.Component {
     chats[peerID].online = false;
     delete chats[peerID].connection;
     this.setState({ chats: chats });
-    // TODO: notify the username server!
   }
 
   checkSavedConnections() {
@@ -151,9 +157,13 @@ class MainView extends React.Component {
               messages: [...this.state.chats[chat].messages],
               online: false
             };
+            var openChatID = this.state.openChatID;
             if (chat !== res.data) {
               delete chats[chat];
+              // If the user had this chat opened, let's keep it that way
+              if (openChatID == chat) openChatID = res.data;
             }
+
             connection.on("open", () => {
               chats[res.data].online = true;
               this.setState({ chats: chats });
@@ -164,11 +174,13 @@ class MainView extends React.Component {
                 this.setOffline(res.data);
               });
             });
-            this.setState({ chats: chats });
+            this.setState({ openChatID: openChatID, chats: chats });
             this.ls("chats", this.safeStringify(chats));
           })
           .catch(error => {
             var chats = this.state.chats;
+            console.log(chats);
+            console.log(chat);
             chats[chat] = {
               connection: null,
               username: chats[chat].username,
@@ -187,7 +199,7 @@ class MainView extends React.Component {
   componentDidMount() {
     this.props.peer.on("connection", this.handleNewConnection);
     this.props.peer.on("call", this.handleIncomingCall);
-    setTimeout(() => {
+    setInterval(() => {
       this.checkSavedConnections();
     }, 5000);
   }
@@ -205,9 +217,9 @@ class MainView extends React.Component {
       message.position = "left";
       message.date = new Date();
       message.dateString =
-        new Date().getHours().toString() +
+        ("0" + new Date().getHours()).slice(-2) +
         ":" +
-        new Date().getMinutes().toString();
+        ("0" + new Date().getMinutes()).slice(-2);
       let chatData = this.state.chats;
       if (this.state.openChatID !== connection.peer)
         chatData[connection.peer].unread++;
@@ -219,23 +231,29 @@ class MainView extends React.Component {
   }
 
   handleSendMessage(text, recipientID) {
-    let message = {
-      type: "text",
-      text: text,
-      date: new Date(),
-      dateString:
-        new Date().getHours().toString() +
-        ":" +
-        new Date().getMinutes().toString()
-    };
-    this.state.chats[recipientID].connection.send(message);
-    message.position = "right";
-    let chatData = this.state.chats;
-    chatData[recipientID].messages.push(message);
-    this.setState({ chats: chatData });
-
-    this.ls("chats", this.safeStringify(chatData));
-    this.forceUpdate();
+    if (this.state.chats[recipientID].online) {
+      let message = {
+        type: "text",
+        text: text,
+        date: new Date(),
+        dateString:
+          ("0" + new Date().getHours()).slice(-2) +
+          ":" +
+          ("0" + new Date().getMinutes()).slice(-2)
+      };
+      this.state.chats[recipientID].connection.send(message);
+      message.position = "right";
+      let chatData = this.state.chats;
+      chatData[recipientID].messages.push(message);
+      this.setState({ chats: chatData });
+      this.ls("chats", this.safeStringify(chatData));
+      this.forceUpdate();
+    } else {
+      this.setState({
+        snackbarMessage: "You can't text offline users.",
+        snackbarOpen: true
+      });
+    }
   }
 
   handleNewConnection(connection) {
@@ -248,28 +266,30 @@ class MainView extends React.Component {
       .then(res => {
         username = res.data;
         var chats = this.state.chats;
-        chats[connection.peer] = {
-          connection: connection,
-          messages: [],
-          username: username,
-          unread: 0,
-          online: true
-        };
+        var messages = [];
+        var unread = 0;
+        var oldChat = "";
         // Check if we had a previous connection, and delete it
         for (const checkingChat in chats) {
-          if (
-            chats[checkingChat].username === username &&
-            checkingChat != connection.peer
-          ) {
-            chats[connection.peer].messages = [...chats[checkingChat].messages];
-            chats[connection.peer].unread = chats[checkingChat].unread;
-            delete chats[checkingChat];
-            if (this.state.openChatID == checkingChat) {
-              this.setState({ openChatID: connection.peer });
-            }
+          if (chats[checkingChat].username == username) {
+            oldChat = checkingChat;
+            messages = [...chats[checkingChat].messages];
+            unread = chats[checkingChat].unread;
+            if (checkingChat != connection.peer) delete chats[checkingChat];
           }
         }
-        this.setState({ chats: chats });
+        chats[connection.peer] = {
+          connection: connection,
+          username: username,
+          unread: unread,
+          messages: messages,
+          online: true
+        };
+        var openChatID = this.state.openChatID;
+        if (openChatID == oldChat) {
+          openChatID = connection.peer;
+        }
+        this.setState({ chats: chats, openChatID: openChatID });
         this.ls("chats", this.safeStringify(chats));
       })
       .catch(error => {
@@ -303,7 +323,8 @@ class MainView extends React.Component {
           connection: connection,
           username: username,
           messages: messages,
-          online: true
+          online: true,
+          unread: 0
         };
         connection.on("open", () => {
           connection.on("data", data => {
@@ -321,11 +342,10 @@ class MainView extends React.Component {
         this.setState({ query: "" });
       })
       .catch(error => {
-        // TODO: Snackbar to report error
-        /*setState({
-          loginSnackbar: true,
-          snackbarMessage: "Wrong login inserted!"
-        });*/
+        this.setState({
+          snackbarMessage: "Can't find that user.",
+          snackbarOpen: true
+        });
       });
   }
 
@@ -334,28 +354,35 @@ class MainView extends React.Component {
   }
 
   handleCallRequest() {
-    // Open popup lightbox
-    this.setState({ videoCallOpen: true });
-    // Instantiate peerjs call
-    if (navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices
-        .getUserMedia({ audio: true, video: true })
-        .then(myStream => {
-          var call = this.props.peer.call(this.state.openChatID, myStream);
-          call.on("stream", stream => {
-            this.streamRef.current.srcObject = stream;
-            this.setState({ inCall: true, call: call });
-          });
-          call.on("close", () => {
-            this.setState({ inCall: false });
-            myStream.getTracks().forEach(function(track) {
-              track.stop();
+    if (this.state.chats[this.state.openChatID].online) {
+      // Open popup lightbox
+      this.setState({ videoCallOpen: true });
+      // Instantiate peerjs call
+      if (navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices
+          .getUserMedia({ audio: true, video: true })
+          .then(myStream => {
+            var call = this.props.peer.call(this.state.openChatID, myStream);
+            call.on("stream", stream => {
+              this.streamRef.current.srcObject = stream;
+              this.setState({ inCall: true, call: call });
             });
+            call.on("close", () => {
+              this.setState({ inCall: false });
+              myStream.getTracks().forEach(function(track) {
+                track.stop();
+              });
+            });
+          })
+          .catch(function(err0r) {
+            console.log(err0r);
           });
-        })
-        .catch(function(err0r) {
-          console.log(err0r);
-        });
+      }
+    } else {
+      this.setState({
+        snackbarMessage: "You can't call offline users.",
+        snackbarOpen: true
+      });
     }
   }
 
@@ -470,6 +497,16 @@ class MainView extends React.Component {
     return (
       <div className={this.props.classes.root}>
         {callLightBox}
+        <Snackbar
+          anchorOrigin={{
+            vertical: "bottom",
+            horizontal: "center"
+          }}
+          open={this.state.snackbarOpen}
+          autoHideDuration={4000}
+          onClose={this.handleSnackbarClose}
+          message={this.state.snackbarMessage}
+        />
         <CssBaseline />
         <AppBar position="fixed" className={this.props.classes.appBar}>
           <Toolbar>

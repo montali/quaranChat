@@ -45,7 +45,6 @@ class MainApp extends React.Component {
     const peer = new Peer();
     this.setState({ peer: peer }, () => {
       // If the username is already set, let's use that
-      console.log(this.state.oldUsername);
       const username =
         this.state.username == null && this.prevLoggedIn
           ? this.state.oldUsername
@@ -135,7 +134,6 @@ class MainApp extends React.Component {
   }
 
   render() {
-    console.log(this.state.loggedIn);
     if (!this.state.loggedIn) {
       return (
         <SignInPage
