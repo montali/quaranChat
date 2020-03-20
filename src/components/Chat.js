@@ -27,21 +27,31 @@ class Chat extends React.Component {
   }
 
   sendHandler() {
-    this.props.onSendHandler(
-      this.state.inputText,
-      this.props.chatData.connection.peer
-    );
-    this.setState({ inputText: "" });
+    if (this.props.chatData.online) {
+      this.props.onSendHandler(
+        this.state.inputText,
+        this.props.chatData.connection.peer
+      );
+      this.setState({ inputText: "" });
+    } else {
+      this.props.snackbarCreator("You can't text offline users.");
+    }
   }
 
   textChangeHandler(event) {
     this.setState({ inputText: event.target.value });
   }
+  scrollToBottom = () => {
+    this.messagesEnd.scrollIntoView({ behavior: "smooth" });
+  };
+  componentDidMount() {
+    this.scrollToBottom();
+  }
 
+  componentDidUpdate() {
+    this.scrollToBottom();
+  }
   render() {
-    /*const messageRows = this.props.chatData.messages.map(message => (
-      <MessageRow senderName={message.sender} message={message.text} />
-    ));*/
     if (this.props.matches) {
       return (
         <Container className={this.props.classes.content}>
@@ -80,6 +90,12 @@ class Chat extends React.Component {
               toBottomHeight={"100%"}
               dataSource={this.props.chatData.messages}
             />
+            <div
+              style={{ float: "left", clear: "both", height: "1px" }}
+              ref={el => {
+                this.messagesEnd = el;
+              }}
+            ></div>
           </GridList>
           <MessageInput
             onSend={this.sendHandler}
@@ -127,6 +143,12 @@ class Chat extends React.Component {
               toBottomHeight={"100%"}
               dataSource={this.props.chatData.messages}
             />
+            <div
+              style={{ float: "left", clear: "both", height: "1px" }}
+              ref={el => {
+                this.messagesEnd = el;
+              }}
+            ></div>
           </GridList>
           <MessageInput
             onSend={this.sendHandler}

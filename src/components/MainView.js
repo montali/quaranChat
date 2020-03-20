@@ -113,6 +113,7 @@ class MainView extends React.Component {
     this.handleSnackbarClose = this.handleSnackbarClose.bind(this);
     this.handleCallAnswer = this.handleCallAnswer.bind(this);
     this.handleCallDecline = this.handleCallDecline.bind(this);
+    this.createSnackbar = this.createSnackbar.bind(this);
   }
 
   handleSnackbarClose() {
@@ -167,7 +168,6 @@ class MainView extends React.Component {
               // If the user had this chat opened, let's keep it that way
               if (openChatID === chat) openChatID = res.data;
             }
-
             connection.on("open", () => {
               chats[res.data].online = true;
               this.setState({ chats: chats });
@@ -186,6 +186,13 @@ class MainView extends React.Component {
           });
       }
     }
+  }
+
+  createSnackbar(message) {
+    this.setState({
+      snackbarMessage: message,
+      snackbarOpen: true
+    });
   }
 
   componentDidMount() {
@@ -241,10 +248,7 @@ class MainView extends React.Component {
       this.ls("chats", this.safeStringify(chatData));
       this.forceUpdate();
     } else {
-      this.setState({
-        snackbarMessage: "You can't text offline users.",
-        snackbarOpen: true
-      });
+      this.createSnackbar("You can't text offline users.");
     }
   }
 
@@ -334,10 +338,7 @@ class MainView extends React.Component {
         this.setState({ query: "" });
       })
       .catch(error => {
-        this.setState({
-          snackbarMessage: "Can't find that user.",
-          snackbarOpen: true
-        });
+        this.createSnackbar("Can't find that user.");
       });
   }
 
@@ -371,10 +372,7 @@ class MainView extends React.Component {
           });
       }
     } else {
-      this.setState({
-        snackbarMessage: "You can't call offline users.",
-        snackbarOpen: true
-      });
+      this.createSnackbar("You can't call offline users.");
     }
   }
 
@@ -622,6 +620,7 @@ class MainView extends React.Component {
           onSendHandler={this.handleSendMessage}
           callHandler={this.handleCallRequest}
           matches={this.props.matches}
+          snackbarCreator={this.createSnackbar}
         />
       </div>
     );
