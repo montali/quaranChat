@@ -60,7 +60,8 @@ const useStyles = makeStyles(theme => ({
   gridList: {
     height: "85%",
     width: "100%",
-    backgroundColor: "#3f51b5"
+    backgroundImage:
+      'url("https://telegram.org/file/464001326/1/eHuBKzF9Lh4.288899/1f135a074a169f90e5")'
   },
   message: {
     minWidth: "100%"
@@ -104,6 +105,12 @@ const useStyles = makeStyles(theme => ({
   divider: {
     height: 28,
     margin: 4
+  },
+  title: {
+    flexGrow: 1
+  },
+  logout: {
+    color: "white"
   }
 }));
 
