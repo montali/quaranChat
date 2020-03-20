@@ -422,18 +422,30 @@ class MainView extends React.Component {
     if (this.state.inCall) {
       callLightBox = (
         <div className={this.props.classes.videoCallDiv}>
-          <video
-            className={this.props.classes.videoStream}
-            ref={this.streamRef}
-            autoPlay
-          />
-          <Fab
-            color="primary"
-            aria-label="add"
-            onClick={() => this.state.call.close()}
+          <Grid
+            container
+            direction="column"
+            justify="center"
+            alignItems="center"
+            style={{ height: "100%" }}
           >
-            <CallEndIcon />
-          </Fab>
+            <Grid item>
+              <video
+                className={this.props.classes.videoStream}
+                ref={this.streamRef}
+                autoPlay
+              />
+            </Grid>
+            <Grid item>
+              <Fab
+                color="primary"
+                aria-label="add"
+                onClick={() => this.state.call.close()}
+              >
+                <CallEndIcon />
+              </Fab>
+            </Grid>
+          </Grid>
         </div>
       );
     } else {

@@ -82,9 +82,9 @@ const useStyles = makeStyles(theme => ({
   videoStream: {
     marginLeft: "auto",
     marginRight: "auto",
-    display: "block",
-    width: "1280",
-    height: "720"
+    marginBottom: "auto",
+    marginTop: "auto",
+    display: "block"
   },
   paper: {
     backgroundColor: theme.palette.text.paper
