@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 //import "../App.css";
 
 // Material UI
@@ -14,6 +14,8 @@ import Fab from "@material-ui/core/Fab";
 import CallEndIcon from "@material-ui/icons/CallEnd";
 import PersonAddIcon from "@material-ui/icons/PersonAdd";
 import AddIcon from "@material-ui/icons/Add";
+import CallIcon from "@material-ui/icons/Call";
+
 import Snackbar from "@material-ui/core/Snackbar";
 
 import Hidden from "@material-ui/core/Hidden";
@@ -22,7 +24,6 @@ import TextField from "@material-ui/core/TextField";
 
 // Local imports
 import axios from "axios";
-import FsLightbox from "fslightbox-react";
 
 // Local components
 import Chat from "./Chat";
@@ -96,7 +97,8 @@ class MainView extends React.Component {
       chats: chatData,
       openChatID: "demo",
       inCall: false,
-      snackbarOpen: false
+      snackbarOpen: false,
+      callInbound: false
     };
     this.streamRef = React.createRef();
     this.handleNewChat = this.handleNewChat.bind(this);
@@ -109,6 +111,8 @@ class MainView extends React.Component {
     this.checkSavedConnections = this.checkSavedConnections.bind(this);
     this.setOffline = this.setOffline.bind(this);
     this.handleSnackbarClose = this.handleSnackbarClose.bind(this);
+    this.handleCallAnswer = this.handleCallAnswer.bind(this);
+    this.handleCallDecline = this.handleCallDecline.bind(this);
   }
 
   handleSnackbarClose() {
@@ -161,7 +165,7 @@ class MainView extends React.Component {
             if (chat !== res.data) {
               delete chats[chat];
               // If the user had this chat opened, let's keep it that way
-              if (openChatID == chat) openChatID = res.data;
+              if (openChatID === chat) openChatID = res.data;
             }
 
             connection.on("open", () => {
@@ -178,19 +182,7 @@ class MainView extends React.Component {
             this.ls("chats", this.safeStringify(chats));
           })
           .catch(error => {
-            var chats = this.state.chats;
-            console.log(chats);
-            console.log(chat);
-            chats[chat] = {
-              connection: null,
-              username: chats[chat].username,
-              messages: [...chats[chat].messages],
-              online: false
-            };
-            this.setState({
-              chats: chats
-            });
-            this.ls("chats", this.safeStringify(chats));
+            console.log(error);
           });
       }
     }
@@ -213,7 +205,7 @@ class MainView extends React.Component {
   }
 
   handleDataReceived(message, connection) {
-    if (message.type == "text") {
+    if (message.type === "text") {
       message.position = "left";
       message.date = new Date();
       message.dateString =
@@ -271,11 +263,11 @@ class MainView extends React.Component {
         var oldChat = "";
         // Check if we had a previous connection, and delete it
         for (const checkingChat in chats) {
-          if (chats[checkingChat].username == username) {
+          if (chats[checkingChat].username === username) {
             oldChat = checkingChat;
             messages = [...chats[checkingChat].messages];
             unread = chats[checkingChat].unread;
-            if (checkingChat != connection.peer) delete chats[checkingChat];
+            if (checkingChat !== connection.peer) delete chats[checkingChat];
           }
         }
         chats[connection.peer] = {
@@ -286,7 +278,7 @@ class MainView extends React.Component {
           online: true
         };
         var openChatID = this.state.openChatID;
-        if (openChatID == oldChat) {
+        if (openChatID === oldChat) {
           openChatID = connection.peer;
         }
         this.setState({ chats: chats, openChatID: openChatID });
@@ -387,19 +379,32 @@ class MainView extends React.Component {
   }
 
   handleIncomingCall(call) {
+    axios
+      .get("http://40ena.monta.li:40015/username/" + call.peer, {
+        crossDomain: true
+      })
+      .then(res => {
+        this.setState({ callInbound: true, call: call, callerName: res.data });
+      })
+      .catch(error => {
+        console.log(error);
+      });
+  }
+
+  handleCallAnswer() {
     // Instantiate peerjs call
     if (navigator.mediaDevices.getUserMedia) {
       navigator.mediaDevices
         .getUserMedia({ audio: true, video: true })
         .then(myStream => {
-          call.answer(myStream);
-          call.on("stream", stream => {
+          this.state.call.answer(myStream);
+          this.state.call.on("stream", stream => {
             // Open popup lightbox
             this.streamRef.current.srcObject = stream;
-            this.setState({ inCall: true, call: call });
+            this.setState({ inCall: true, callInbound: false });
           });
-          call.on("close", () => {
-            this.setState({ inCall: false });
+          this.state.call.on("close", () => {
+            this.setState({ inCall: false, callerName: "" });
             myStream.getTracks().forEach(function(track) {
               track.stop();
             });
@@ -409,6 +414,11 @@ class MainView extends React.Component {
           console.log(err0r);
         });
     }
+  }
+
+  handleCallDecline() {
+    this.state.call.close();
+    this.setState({ callInbound: false, callerName: "" });
   }
 
   render() {
@@ -446,6 +456,45 @@ class MainView extends React.Component {
               </Fab>
             </Grid>
           </Grid>
+        </div>
+      );
+    } else if (this.state.callInbound) {
+      callLightBox = (
+        <div className={this.props.classes.videoCallDiv}>
+          <Grid
+            container
+            direction="column"
+            justify="center"
+            alignItems="center"
+            style={{ height: "100%" }}
+          >
+            <Grid item>
+              <Typography variant="h2" style={{ color: "white" }}>
+                Inbound call from {this.state.callerName}
+              </Typography>
+            </Grid>
+            <Grid item>
+              <Fab
+                color="primary"
+                aria-label="add"
+                onClick={this.handleCallAnswer}
+              >
+                <CallIcon />
+              </Fab>
+              <Fab
+                color="secondary"
+                aria-label="add"
+                onClick={this.handleCallDecline}
+              >
+                <CallEndIcon />
+              </Fab>
+            </Grid>
+          </Grid>
+          <video
+            className={this.props.classes.videoStream}
+            ref={this.streamRef}
+            autoPlay
+          />
         </div>
       );
     } else {

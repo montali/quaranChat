@@ -52,7 +52,7 @@ class MainApp extends React.Component {
       const password = this.state.password;
       const setState = this.setState.bind(this);
       // If the user is changing account, delete the messages
-      if (this.prevLoggedIn && this.state.oldUsername != username) {
+      if (this.prevLoggedIn && this.state.oldUsername !== username) {
         this.ls.remove("chats");
       }
       peer.on("open", id => {
@@ -64,7 +64,6 @@ class MainApp extends React.Component {
             crossDomain: true
           })
           .then(res => {
-            console.log(this.state);
             setState({
               loggedIn: true,
               username: username,
@@ -129,7 +128,7 @@ class MainApp extends React.Component {
         });
       })
       .catch(error => {
-        console.log(this.state);
+        console.log(error);
       });
   }
 

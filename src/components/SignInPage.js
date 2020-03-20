@@ -87,7 +87,7 @@ class Login extends React.Component {
                   margin="normal"
                   required
                   fullWidth
-                  id="username"
+                  id="signinUsername"
                   label="Username"
                   name="username"
                   autoComplete="username"
@@ -103,7 +103,7 @@ class Login extends React.Component {
                   name="password"
                   label="Password"
                   type="password"
-                  id="password"
+                  id="signinPassword"
                   autoComplete="current-password"
                   onChange={this.props.handleFormChange}
                 />

@@ -75,7 +75,6 @@ class Chat extends React.Component {
           </Paper>
           <GridList className={this.props.classes.gridList} cols={1}>
             <MessageList
-              className="message-list"
               className={this.props.classes.message}
               lockable={true}
               toBottomHeight={"100%"}
@@ -123,7 +122,6 @@ class Chat extends React.Component {
           </Paper>
           <GridList className={this.props.classes.gridList} cols={1}>
             <MessageList
-              className="message-list"
               className={this.props.classes.message}
               lockable={true}
               toBottomHeight={"100%"}
