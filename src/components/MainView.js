@@ -15,7 +15,7 @@ import CallEndIcon from "@material-ui/icons/CallEnd";
 import PersonAddIcon from "@material-ui/icons/PersonAdd";
 import AddIcon from "@material-ui/icons/Add";
 import CallIcon from "@material-ui/icons/Call";
-
+import ExitToAppIcon from "@material-ui/icons/ExitToApp";
 import Snackbar from "@material-ui/core/Snackbar";
 
 import Hidden from "@material-ui/core/Hidden";
@@ -224,22 +224,24 @@ class MainView extends React.Component {
 
   handleSendMessage(text, recipientID) {
     if (this.state.chats[recipientID].online) {
-      let message = {
-        type: "text",
-        text: text,
-        date: new Date(),
-        dateString:
-          ("0" + new Date().getHours()).slice(-2) +
-          ":" +
-          ("0" + new Date().getMinutes()).slice(-2)
-      };
-      this.state.chats[recipientID].connection.send(message);
-      message.position = "right";
-      let chatData = this.state.chats;
-      chatData[recipientID].messages.push(message);
-      this.setState({ chats: chatData });
-      this.ls("chats", this.safeStringify(chatData));
-      this.forceUpdate();
+      if (text !== "") {
+        let message = {
+          type: "text",
+          text: text,
+          date: new Date(),
+          dateString:
+            ("0" + new Date().getHours()).slice(-2) +
+            ":" +
+            ("0" + new Date().getMinutes()).slice(-2)
+        };
+        this.state.chats[recipientID].connection.send(message);
+        message.position = "right";
+        let chatData = this.state.chats;
+        chatData[recipientID].messages.push(message);
+        this.setState({ chats: chatData });
+        this.ls("chats", this.safeStringify(chatData));
+        this.forceUpdate();
+      }
     } else {
       this.setState({
         snackbarMessage: "You can't text offline users.",
@@ -580,12 +582,19 @@ class MainView extends React.Component {
             >
               <MenuIcon />
             </IconButton>
-            <Typography variant="h6" noWrap>
+            <Typography variant="h5" className={this.props.classes.title}>
               QuaranChat
             </Typography>
+            <IconButton aria-label="Logout">
+              <ExitToAppIcon
+                fontSize="medium"
+                onClick={this.props.handleLogout}
+                className={this.props.classes.logout}
+              />
+            </IconButton>
           </Toolbar>
         </AppBar>
-        <nav className={this.props.classes.drawer} aria-label="mailbox folders">
+        <nav className={this.props.classes.drawer}>
           {/* The implementation can be swapped with js to avoid SEO duplication of links. */}
           <Hidden smUp implementation="css">
             <Drawer
