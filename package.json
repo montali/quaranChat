@@ -22,7 +22,8 @@
     "start": "set HTTPS=true&&react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "postinstall": "sh ./scripts/link-certificate.sh"
   },
   "eslintConfig": {
     "extends": "react-app"
