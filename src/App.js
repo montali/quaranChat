@@ -58,7 +58,7 @@ class MainApp extends React.Component {
       peer.on("open", id => {
         // Connect to our login server and update the ID with a POST
         axios
-          .post("http://40ena.monta.li:40015/id/" + username, {
+          .post("https://api.monta.li/id/" + username, {
             password: password,
             connectionID: id,
             crossDomain: true
@@ -87,7 +87,7 @@ class MainApp extends React.Component {
     const setState = this.setState.bind(this);
     // Connect to our login server and register the user
     axios
-      .post("http://40ena.monta.li:40015/signup/", {
+      .post("https://api.monta.li/signup/", {
         username: username,
         password: password,
         crossDomain: true
@@ -112,7 +112,7 @@ class MainApp extends React.Component {
     const password = this.state.password;
     const setState = this.setState.bind(this);
     axios
-      .delete("http://40ena.monta.li:40015/id/" + username, {
+      .delete("https://api.monta.li/id/" + username, {
         data: {
           password: password,
           crossDomain: true

@@ -146,12 +146,9 @@ class MainView extends React.Component {
       this.pingPeer(chat);
       if (!this.state.chats[chat].online) {
         axios
-          .get(
-            "http://40ena.monta.li:40015/id/" + this.state.chats[chat].username,
-            {
-              crossDomain: true
-            }
-          )
+          .get("https://api.monta.li/id/" + this.state.chats[chat].username, {
+            crossDomain: true
+          })
           .then(res => {
             // Connect our peer to the id and save the connection in chats
             var connection = this.props.peer.connect(res.data);
@@ -258,7 +255,7 @@ class MainView extends React.Component {
     var username = "";
     // Get username by ID from server
     axios
-      .get("http://40ena.monta.li:40015/username/" + connection.peer, {
+      .get("https://api.monta.li/username/" + connection.peer, {
         crossDomain: true
       })
       .then(res => {
@@ -310,7 +307,7 @@ class MainView extends React.Component {
   openNewConnection(username, messages) {
     // Request the ID to the server
     axios
-      .get("http://40ena.monta.li:40015/id/" + username, {
+      .get("https://api.monta.li/id/" + username, {
         crossDomain: true
       })
       .then(res => {
@@ -380,7 +377,7 @@ class MainView extends React.Component {
 
   handleIncomingCall(call) {
     axios
-      .get("http://40ena.monta.li:40015/username/" + call.peer, {
+      .get("https://api.monta.li/username/" + call.peer, {
         crossDomain: true
       })
       .then(res => {
